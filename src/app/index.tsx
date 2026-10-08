@@ -33,6 +33,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -153,6 +154,14 @@ const RATING_OPTIONS = [
 export default function GamingStoreScreen() {
   // Navigation Tabs: 'catalog' | 'sets' | 'wishlist' | 'orders' | 'account'
   const [activeTab, setActiveTab] = useState<"catalog" | "sets" | "wishlist" | "orders" | "account">("catalog");
+
+  // Responsive Grid Dimensions for Desktop Web & Mobile
+  const { width: windowWidth } = useWindowDimensions();
+  const numColumns = useMemo(() => {
+    if (windowWidth >= 1200) return 4;
+    if (windowWidth >= 768) return 3;
+    return 2;
+  }, [windowWidth]);
 
   // Catalog State
   const [products, setProducts] = useState<Product[]>([]);
@@ -762,58 +771,65 @@ export default function GamingStoreScreen() {
 
     return (
       <View style={styles.productCard}>
-        {/* Top Badges & Action Buttons */}
-        <View style={styles.cardHeader}>
-          {isOut ? (
-            <View style={[styles.badge, styles.badgeOut]}>
-              <Text style={styles.badgeText}>❌ Out of Stock</Text>
-            </View>
-          ) : isLow ? (
-            <View style={[styles.badge, styles.badgeLow]}>
-              <Text style={styles.badgeText}>⚠️ Only {item.stock} left</Text>
-            </View>
-          ) : (
-            <View style={[styles.badge, styles.badgeInStock]}>
-              <Text style={styles.badgeText}>Stock: {item.stock}</Text>
-            </View>
-          )}
+        {/* Product Showcase Visual with Contain Mode */}
+        <View style={styles.productImageContainer}>
+          {/* Top Badges & Action Buttons */}
+          <View style={styles.cardHeader}>
+            {isOut ? (
+              <View style={[styles.badge, styles.badgeOut]}>
+                <Text style={styles.badgeText}>❌ หมด</Text>
+              </View>
+            ) : isLow ? (
+              <View style={[styles.badge, styles.badgeLow]}>
+                <Text style={styles.badgeText}>⚠️ เหลือ {item.stock}</Text>
+              </View>
+            ) : (
+              <View style={[styles.badge, styles.badgeInStock]}>
+                <Text style={styles.badgeText}>Stock: {item.stock}</Text>
+              </View>
+            )}
 
-          {/* Quick Actions: Edit (✏️) & Wishlist (❤️) */}
-          <View style={{ flexDirection: "row", gap: 6 }}>
-            <TouchableOpacity
-              style={styles.cardIconBtn}
-              onPress={() => openEditProductModal(item)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="pencil" size={16} color={COLORS.gold} />
-            </TouchableOpacity>
+            {/* Quick Actions: Edit (✏️) & Wishlist (❤️) */}
+            <View style={{ flexDirection: "row", gap: 6 }}>
+              <TouchableOpacity
+                style={styles.cardIconBtn}
+                onPress={() => openEditProductModal(item)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="pencil" size={14} color={COLORS.gold} />
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.cardIconBtn}
-              onPress={() => handleToggleWishlist(item)}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={wish ? "heart" : "heart-outline"}
-                size={18}
-                color={wish ? COLORS.accent : COLORS.textSecondary}
-              />
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.cardIconBtn}
+                onPress={() => handleToggleWishlist(item)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={wish ? "heart" : "heart-outline"}
+                  size={16}
+                  color={wish ? COLORS.accent : COLORS.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
+
+          {/* Full Clear Product Showcase */}
+          <Image
+            source={{ uri: item.image_url || DEFAULT_PRODUCT_IMAGE }}
+            style={styles.productImage}
+            resizeMode="contain"
+          />
         </View>
 
-        {/* Product Image */}
-        <Image
-          source={{ uri: item.image_url || DEFAULT_PRODUCT_IMAGE }}
-          style={styles.productImage}
-          resizeMode="cover"
-        />
-
-        {/* Category & Title */}
+        {/* Card Body & Details */}
         <View style={styles.cardBody}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={styles.productCategory}>{item.category}</Text>
-            <Text style={styles.productRatingText}>⭐ {item.rating?.toFixed(1) || "5.0"}</Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+            <View style={styles.categoryBadge}>
+              <Text style={styles.productCategory}>{item.category}</Text>
+            </View>
+            <View style={styles.ratingBadge}>
+              <Text style={styles.productRatingText}>⭐ {item.rating?.toFixed(1) || "5.0"}</Text>
+            </View>
           </View>
 
           <Text style={styles.productName} numberOfLines={2}>
@@ -827,7 +843,7 @@ export default function GamingStoreScreen() {
             </View>
             <View style={styles.specTag}>
               <Text style={styles.specTagText}>
-                {item.connection === "Wireless" ? "📶 Wireless" : "🔌 Wired"}
+                {item.connection === "Wireless" ? "📶 Wireless" : item.connection === "Both" ? "⚡ Dual" : "🔌 Wired"}
               </Text>
             </View>
             {item.dpi ? (
@@ -843,47 +859,54 @@ export default function GamingStoreScreen() {
             ) : null}
           </View>
 
-          {/* Price */}
-          <Text style={styles.productPrice}>฿{item.price.toLocaleString()}</Text>
-
-          {/* Stock Info Tag */}
-          <View style={styles.stockRow}>
-            <Text style={styles.stockLabel}>สต็อกคงเหลือ:</Text>
-            <Text style={[styles.stockValue, isOut && { color: COLORS.badgeOut }, isLow && { color: COLORS.badgeLow }]}>
-              {item.stock} ชิ้น
-            </Text>
+          {/* Price & Stock info */}
+          <View style={styles.priceRow}>
+            <View>
+              <Text style={styles.priceLabel}>ราคา</Text>
+              <Text style={styles.productPrice}>฿{item.price.toLocaleString()}</Text>
+            </View>
+            <View style={{ alignItems: "flex-end" }}>
+              <Text style={styles.stockLabel}>สถานะคลัง</Text>
+              <Text style={[styles.stockValue, isOut && { color: COLORS.badgeOut }, isLow && { color: COLORS.badgeLow }]}>
+                {isOut ? "หมดชั่วคราว" : `${item.stock} ชิ้นพร้อมส่ง`}
+              </Text>
+            </View>
           </View>
 
-          {/* Ask NEXORA AI Advice Button */}
-          <TouchableOpacity
-            style={styles.askAiCardBtn}
-            onPress={() => {
-              setAiFocusedProduct(item);
-              setAiInitialPrompt("");
-              setAiChatVisible(true);
-            }}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="sparkles" size={14} color="#C084FC" style={{ marginRight: 6 }} />
-            <Text style={styles.askAiCardBtnText}>🤖 Ask NEXORA AI</Text>
-          </TouchableOpacity>
+          {/* Action Buttons */}
+          <View style={{ marginTop: 10, gap: 6 }}>
+            {/* Ask NEXORA AI Advice Button */}
+            <TouchableOpacity
+              style={styles.askAiCardBtn}
+              onPress={() => {
+                setAiFocusedProduct(item);
+                setAiInitialPrompt("");
+                setAiChatVisible(true);
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="sparkles" size={13} color="#C084FC" style={{ marginRight: 5 }} />
+              <Text style={styles.askAiCardBtnText}>🤖 Ask NEXORA AI</Text>
+            </TouchableOpacity>
 
-          {/* Add to Cart Button */}
-          <TouchableOpacity
-            style={[styles.addToCartBtn, isOut && styles.addToCartBtnDisabled]}
-            disabled={isOut}
-            onPress={() => addToCart(item, 1)}
-          >
-            <Ionicons
-              name={isOut ? "close-circle" : "cart"}
-              size={18}
-              color="#FFF"
-              style={{ marginRight: 6 }}
-            />
-            <Text style={styles.addToCartBtnText}>
-              {isOut ? "Out of Stock" : "Add to Cart"}
-            </Text>
-          </TouchableOpacity>
+            {/* Add to Cart Button */}
+            <TouchableOpacity
+              style={[styles.addToCartBtn, isOut && styles.addToCartBtnDisabled]}
+              disabled={isOut}
+              onPress={() => addToCart(item, 1)}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name={isOut ? "close-circle" : "cart"}
+                size={16}
+                color="#FFF"
+                style={{ marginRight: 6 }}
+              />
+              <Text style={styles.addToCartBtnText}>
+                {isOut ? "Out of Stock" : "Add to Cart"}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );
@@ -898,49 +921,51 @@ export default function GamingStoreScreen() {
 
       {/* TOP APP BAR */}
       <View style={styles.topBar}>
-        <View>
-          <Text style={styles.brandTitle}>⚡ mono Gaming</Text>
-          <Text style={styles.brandSubtitle}>High-Performance Gear & Custom Sets</Text>
-        </View>
+        <View style={styles.topBarInner}>
+          <View>
+            <Text style={styles.brandTitle}>⚡ mono Gaming</Text>
+            <Text style={styles.brandSubtitle}>High-Performance Gear & Custom Sets</Text>
+          </View>
 
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          {/* Top User Status Pill / Login Button */}
-          {currentUser ? (
-            <TouchableOpacity
-              style={styles.userStatusPill}
-              onPress={() => setActiveTab("account")}
-            >
-              <Ionicons
-                name={currentUser.role === "admin" ? "shield-checkmark" : "person-circle"}
-                size={18}
-                color={currentUser.role === "admin" ? COLORS.gold : COLORS.primaryLight}
-              />
-              <Text style={styles.userStatusText} numberOfLines={1}>
-                {currentUser.username}
-              </Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={styles.topLoginBtn}
-              onPress={() => {
-                setAuthTab("signin");
-                setAuthModalVisible(true);
-              }}
-            >
-              <Ionicons name="log-in-outline" size={18} color="#FFF" />
-              <Text style={styles.topLoginBtnText}>เข้าสู่ระบบ</Text>
-            </TouchableOpacity>
-          )}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            {/* Top User Status Pill / Login Button */}
+            {currentUser ? (
+              <TouchableOpacity
+                style={styles.userStatusPill}
+                onPress={() => setActiveTab("account")}
+              >
+                <Ionicons
+                  name={currentUser.role === "admin" ? "shield-checkmark" : "person-circle"}
+                  size={18}
+                  color={currentUser.role === "admin" ? COLORS.gold : COLORS.primaryLight}
+                />
+                <Text style={styles.userStatusText} numberOfLines={1}>
+                  {currentUser.username}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.topLoginBtn}
+                onPress={() => {
+                  setAuthTab("signin");
+                  setAuthModalVisible(true);
+                }}
+              >
+                <Ionicons name="log-in-outline" size={18} color="#FFF" />
+                <Text style={styles.topLoginBtnText}>เข้าสู่ระบบ</Text>
+              </TouchableOpacity>
+            )}
 
-          {/* Top Right Cart Badge Button */}
-          <TouchableOpacity
-            style={styles.cartHeaderBtn}
-            onPress={() => setCartModalVisible(true)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="cart" size={20} color="#FFF" />
-            <Text style={styles.cartHeaderText}>Cart ({cartTotalQuantity})</Text>
-          </TouchableOpacity>
+            {/* Top Right Cart Badge Button */}
+            <TouchableOpacity
+              style={styles.cartHeaderBtn}
+              onPress={() => setCartModalVisible(true)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="cart" size={20} color="#FFF" />
+              <Text style={styles.cartHeaderText}>Cart ({cartTotalQuantity})</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -1023,12 +1048,13 @@ export default function GamingStoreScreen() {
             </View>
           ) : (
             <FlatList
+              key={`grid-cols-${numColumns}`}
               data={filteredProducts}
               renderItem={renderProductCard}
               keyExtractor={(item) => String(item.id)}
-              numColumns={2}
+              numColumns={numColumns}
               contentContainerStyle={styles.productListContent}
-              columnWrapperStyle={{ justifyContent: "space-between" }}
+              columnWrapperStyle={numColumns > 1 ? styles.productColumnWrapper : undefined}
               refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
@@ -2147,75 +2173,77 @@ export default function GamingStoreScreen() {
       {/* BOTTOM NAVIGATION TAB BAR */}
       {/* ================================================================== */}
       <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={styles.navTab}
-          onPress={() => setActiveTab("catalog")}
-        >
-          <Ionicons
-            name={activeTab === "catalog" ? "storefront" : "storefront-outline"}
-            size={22}
-            color={activeTab === "catalog" ? COLORS.primary : COLORS.textSecondary}
-          />
-          <Text style={[styles.navLabel, activeTab === "catalog" && styles.navLabelActive]}>
-            สินค้า
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.bottomNavInner}>
+          <TouchableOpacity
+            style={styles.navTab}
+            onPress={() => setActiveTab("catalog")}
+          >
+            <Ionicons
+              name={activeTab === "catalog" ? "storefront" : "storefront-outline"}
+              size={22}
+              color={activeTab === "catalog" ? COLORS.primary : COLORS.textSecondary}
+            />
+            <Text style={[styles.navLabel, activeTab === "catalog" && styles.navLabelActive]}>
+              สินค้า
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.navTab}
-          onPress={() => setActiveTab("sets")}
-        >
-          <Ionicons
-            name={activeTab === "sets" ? "game-controller" : "game-controller-outline"}
-            size={22}
-            color={activeTab === "sets" ? COLORS.primary : COLORS.textSecondary}
-          />
-          <Text style={[styles.navLabel, activeTab === "sets" && styles.navLabelActive]}>
-            จัดเซ็ต
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.navTab}
+            onPress={() => setActiveTab("sets")}
+          >
+            <Ionicons
+              name={activeTab === "sets" ? "game-controller" : "game-controller-outline"}
+              size={22}
+              color={activeTab === "sets" ? COLORS.primary : COLORS.textSecondary}
+            />
+            <Text style={[styles.navLabel, activeTab === "sets" && styles.navLabelActive]}>
+              จัดเซ็ต
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.navTab}
-          onPress={() => setActiveTab("wishlist")}
-        >
-          <Ionicons
-            name={activeTab === "wishlist" ? "heart" : "heart-outline"}
-            size={22}
-            color={activeTab === "wishlist" ? COLORS.accent : COLORS.textSecondary}
-          />
-          <Text style={[styles.navLabel, activeTab === "wishlist" && { color: COLORS.accent }]}>
-            Wishlist
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.navTab}
+            onPress={() => setActiveTab("wishlist")}
+          >
+            <Ionicons
+              name={activeTab === "wishlist" ? "heart" : "heart-outline"}
+              size={22}
+              color={activeTab === "wishlist" ? COLORS.accent : COLORS.textSecondary}
+            />
+            <Text style={[styles.navLabel, activeTab === "wishlist" && { color: COLORS.accent }]}>
+              Wishlist
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.navTab}
-          onPress={() => setActiveTab("orders")}
-        >
-          <Ionicons
-            name={activeTab === "orders" ? "receipt" : "receipt-outline"}
-            size={22}
-            color={activeTab === "orders" ? COLORS.primary : COLORS.textSecondary}
-          />
-          <Text style={[styles.navLabel, activeTab === "orders" && styles.navLabelActive]}>
-            Orders
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.navTab}
+            onPress={() => setActiveTab("orders")}
+          >
+            <Ionicons
+              name={activeTab === "orders" ? "receipt" : "receipt-outline"}
+              size={22}
+              color={activeTab === "orders" ? COLORS.primary : COLORS.textSecondary}
+            />
+            <Text style={[styles.navLabel, activeTab === "orders" && styles.navLabelActive]}>
+              Orders
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.navTab}
-          onPress={() => setActiveTab("account")}
-        >
-          <Ionicons
-            name={activeTab === "account" ? "person" : "person-outline"}
-            size={22}
-            color={activeTab === "account" ? COLORS.primary : COLORS.textSecondary}
-          />
-          <Text style={[styles.navLabel, activeTab === "account" && styles.navLabelActive]}>
-            {currentUser ? (currentUser.role === "admin" ? "Admin" : "โปรไฟล์") : "เข้าสู่ระบบ"}
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.navTab}
+            onPress={() => setActiveTab("account")}
+          >
+            <Ionicons
+              name={activeTab === "account" ? "person" : "person-outline"}
+              size={22}
+              color={activeTab === "account" ? COLORS.primary : COLORS.textSecondary}
+            />
+            <Text style={[styles.navLabel, activeTab === "account" && styles.navLabelActive]}>
+              {currentUser ? (currentUser.role === "admin" ? "Admin" : "โปรไฟล์") : "เข้าสู่ระบบ"}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* FLOATING NEXORA AI BUTTON (มุมขวาล่าง) */}
@@ -2265,14 +2293,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   topBar: {
+    borderBottomWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+    width: "100%",
+  },
+  topBarInner: {
+    maxWidth: 1400,
+    width: "100%",
+    alignSelf: "center",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
   },
   brandTitle: {
     fontSize: 18,
@@ -2437,17 +2471,29 @@ const styles = StyleSheet.create({
     color: "#FFF",
   },
   productListContent: {
+    maxWidth: 1400,
+    width: "100%",
+    alignSelf: "center",
     paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingBottom: 40,
+  },
+  productColumnWrapper: {
+    justifyContent: "flex-start",
+    gap: 16,
+    marginBottom: 16,
   },
   productCard: {
-    width: "48%",
+    flex: 1,
     backgroundColor: COLORS.surface,
-    borderRadius: 14,
-    marginBottom: 16,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: "rgba(51, 65, 85, 0.7)",
     overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 4,
   },
   cardHeader: {
     flexDirection: "row",
@@ -2484,13 +2530,37 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 6,
   },
+  productImageContainer: {
+    width: "100%",
+    height: 185,
+    backgroundColor: "#0A0F1D",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(51, 65, 85, 0.4)",
+    position: "relative",
+  },
   productImage: {
     width: "100%",
-    height: 125,
-    backgroundColor: COLORS.surfaceLight,
+    height: "100%",
   },
   cardBody: {
-    padding: 10,
+    padding: 14,
+  },
+  categoryBadge: {
+    backgroundColor: "rgba(124, 58, 237, 0.15)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "rgba(124, 58, 237, 0.3)",
+  },
+  ratingBadge: {
+    backgroundColor: "rgba(245, 158, 11, 0.12)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   productCategory: {
     fontSize: 10,
@@ -2504,22 +2574,24 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   productName: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "bold",
-    color: COLORS.text,
-    marginTop: 2,
-    minHeight: 34,
+    color: "#FFF",
+    marginTop: 6,
+    minHeight: 40,
+    lineHeight: 20,
   },
   specTagsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 4,
-    marginTop: 4,
+    gap: 6,
+    marginTop: 6,
+    marginBottom: 8,
   },
   specTag: {
     backgroundColor: COLORS.surfaceLight,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 6,
   },
   specTagText: {
@@ -2527,11 +2599,33 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "600",
   },
+  priceRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(51, 65, 85, 0.4)",
+  },
+  priceLabel: {
+    fontSize: 10,
+    color: COLORS.textSecondary,
+  },
   productPrice: {
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: "900",
     color: COLORS.gold,
-    marginTop: 6,
+    marginTop: 2,
+  },
+  stockLabel: {
+    fontSize: 10,
+    color: COLORS.textSecondary,
+  },
+  stockValue: {
+    fontSize: 11,
+    fontWeight: "bold",
+    color: COLORS.badgeInStock,
+    marginTop: 2,
   },
   stockRow: {
     flexDirection: "row",
@@ -2539,30 +2633,23 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 8,
   },
-  stockLabel: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-  },
-  stockValue: {
-    fontSize: 11,
-    fontWeight: "bold",
-    color: COLORS.badgeInStock,
-  },
   addToCartBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: COLORS.primary,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 2,
   },
   addToCartBtnDisabled: {
     backgroundColor: COLORS.surfaceLight,
+    opacity: 0.6,
   },
   addToCartBtnText: {
     color: "#FFF",
     fontWeight: "bold",
-    fontSize: 12,
+    fontSize: 13,
   },
   emptyContainer: {
     alignItems: "center",
@@ -3448,12 +3535,18 @@ const styles = StyleSheet.create({
   },
   // Bottom Navigation Bar
   bottomNav: {
-    flexDirection: "row",
     backgroundColor: COLORS.surface,
     borderTopWidth: 1,
     borderColor: COLORS.border,
     paddingVertical: 8,
     paddingBottom: Platform.OS === "ios" ? 20 : 8,
+    width: "100%",
+  },
+  bottomNavInner: {
+    flexDirection: "row",
+    maxWidth: 1400,
+    width: "100%",
+    alignSelf: "center",
   },
   navTab: {
     flex: 1,
