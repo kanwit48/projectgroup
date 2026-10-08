@@ -10,6 +10,7 @@
  * 5. 📦 Stock System (Stock count, ⚠️ Only X left, ❌ Out of Stock, disable button)
  * 6. 🏷️ Categories (All Products, ⌨️ Keyboard, 🖱️ Mouse, 🎧 Headset, 🖥️ Monitor)
  * 7. 🎮 Gaming Sets: ร้านจัดให้ (Bundles) & ลูกค้าจัดเอง (Custom Builder)
+ * 8. ➕✏️🗑️ Product Management: Add, Edit, Delete Product with Modal & Cloud DB
  * ============================================================================
  */
 
@@ -76,11 +77,11 @@ const COLORS = {
 };
 
 const CATEGORIES = [
-  { id: "All", label: "All Products", icon: "apps-outline" },
-  { id: "Keyboard", label: "⌨️ Keyboard", icon: "hardware-chip-outline" },
-  { id: "Mouse", label: "🖱️ Mouse", icon: "radio-outline" },
-  { id: "Headset", label: "🎧 Headset", icon: "headset-outline" },
-  { id: "Monitor", label: "🖥️ Monitor", icon: "tv-outline" },
+  { id: "All", label: "All Products" },
+  { id: "Keyboard", label: "⌨️ Keyboard" },
+  { id: "Mouse", label: "🖱️ Mouse" },
+  { id: "Headset", label: "🎧 Headset" },
+  { id: "Monitor", label: "🖥️ Monitor" },
 ];
 
 export default function GamingStoreScreen() {
@@ -117,21 +118,18 @@ export default function GamingStoreScreen() {
 
   // User State
   const [currentUser, setCurrentUser] = useState<User | null>(getCurrentUser());
-  const [authModalVisible, setAuthModalVisible] = useState(false);
-  const [authTab, setAuthTab] = useState<"signin" | "signup">("signin");
-  const [authUsername, setAuthUsername] = useState("");
-  const [authPassword, setAuthPassword] = useState("");
-  const [authName, setAuthName] = useState("");
 
-  // Product Add / Edit Admin Modal State
-  const [adminModalVisible, setAdminModalVisible] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  // Product Add / Edit Modal State
+  const [productModalVisible, setProductModalVisible] = useState(false);
+  const [modalMode, setModalMode] = useState<"add" | "edit">("add");
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [formName, setFormName] = useState("");
   const [formPrice, setFormPrice] = useState("");
   const [formStock, setFormStock] = useState("");
   const [formCategory, setFormCategory] = useState("Keyboard");
   const [formImage, setFormImage] = useState("");
   const [formDesc, setFormDesc] = useState("");
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
 
   // Gaming Set Custom Builder State
   const [builderKeyboard, setBuilderKeyboard] = useState<Product | null>(null);
@@ -162,6 +160,99 @@ export default function GamingStoreScreen() {
   const onRefresh = () => {
     setRefreshing(true);
     loadData();
+  };
+
+  // --------------------------------------------------------------------------
+  // Product Add / Edit / Delete Handlers
+  // --------------------------------------------------------------------------
+  const openAddProductModal = () => {
+    setModalMode("add");
+    setSelectedProduct(null);
+    setFormName("");
+    setFormPrice("");
+    setFormStock("10");
+    setFormCategory("Keyboard");
+    setFormImage("");
+    setFormDesc("");
+    setProductModalVisible(true);
+  };
+
+  const openEditProductModal = (product: Product) => {
+    setModalMode("edit");
+    setSelectedProduct(product);
+    setFormName(product.name);
+    setFormPrice(String(product.price));
+    setFormStock(String(product.stock));
+    setFormCategory(product.category || "Keyboard");
+    setFormImage(product.image_url || "");
+    setFormDesc(product.description || "");
+    setProductModalVisible(true);
+  };
+
+  const handleSaveProduct = async () => {
+    if (!formName.trim()) {
+      Alert.alert("กรุณากรอกข้อมูล", "กรุณาระบุชื่อสินค้า");
+      return;
+    }
+    const priceNum = Number(formPrice) || 0;
+    const stockNum = Number(formStock) || 0;
+
+    setIsSavingProduct(true);
+    try {
+      if (modalMode === "add") {
+        await createProductApi({
+          name: formName.trim(),
+          price: priceNum,
+          stock: stockNum,
+          category: formCategory,
+          image_url: formImage.trim() || DEFAULT_PRODUCT_IMAGE,
+          description: formDesc.trim(),
+        });
+        Alert.alert("สำเร็จ", "เพิ่มสินค้าใหม่เรียบร้อยแล้ว");
+      } else if (modalMode === "edit" && selectedProduct) {
+        await updateProductApi(selectedProduct.id, {
+          name: formName.trim(),
+          price: priceNum,
+          stock: stockNum,
+          category: formCategory,
+          image_url: formImage.trim() || selectedProduct.image_url,
+          description: formDesc.trim(),
+        });
+        Alert.alert("สำเร็จ", "แก้ไขข้อมูลสินค้าเรียบร้อยแล้ว");
+      }
+      setProductModalVisible(false);
+      await loadData();
+    } catch (e: any) {
+      Alert.alert("เกิดข้อผิดพลาด", e.message || "ไม่สามารถบันทึกข้อมูลได้");
+    } finally {
+      setIsSavingProduct(false);
+    }
+  };
+
+  const handleDeleteProduct = (product: Product) => {
+    Alert.alert(
+      "ยืนยันการลบสินค้า",
+      `คุณต้องการลบ "${product.name}" ออกจากระบบใช่หรือไม่?`,
+      [
+        { text: "ยกเลิก", style: "cancel" },
+        {
+          text: "ลบสินค้า",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteProductApi(product.id);
+              if (selectedProduct?.id === product.id) {
+                setProductModalVisible(false);
+              }
+              await loadData();
+              Alert.alert("สำเร็จ", "ลบสินค้าเรียบร้อยแล้ว");
+            } catch (e: any) {
+              Alert.alert("เกิดข้อผิดพลาด", e.message || "ไม่สามารถลบสินค้าได้");
+            }
+          },
+        },
+      ]
+    );
   };
 
   // --------------------------------------------------------------------------
@@ -253,7 +344,6 @@ export default function GamingStoreScreen() {
   };
 
   const handleSimulateUploadSlip = () => {
-    // Simulate payment slip upload
     const sampleSlip = "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600";
     setSlipImage(sampleSlip);
     Alert.alert("แนบสลิปสำเร็จ", "อัปโหลดรูปภาพสลิปการโอนเงินเรียบร้อยแล้ว");
@@ -293,12 +383,10 @@ export default function GamingStoreScreen() {
         total_amount: cartTotalPrice,
       });
 
-      // Clear cart
       setCart([]);
       setSlipImage(null);
       setCheckoutModalVisible(false);
 
-      // Reload products to reflect reduced stock!
       await loadData();
 
       Alert.alert(
@@ -340,7 +428,7 @@ export default function GamingStoreScreen() {
   };
 
   // --------------------------------------------------------------------------
-  // Gaming Sets: Pre-built & Custom Builder
+  // Gaming Sets Handlers
   // --------------------------------------------------------------------------
   const handleAddBundleToCart = (bundle: GamingSet) => {
     for (const item of bundle.items) {
@@ -393,7 +481,7 @@ export default function GamingStoreScreen() {
   }, [products, wishlistIds]);
 
   // --------------------------------------------------------------------------
-  // Render Item for Catalog
+  // Render Product Card
   // --------------------------------------------------------------------------
   const renderProductCard = ({ item }: { item: Product }) => {
     const isOut = item.stock <= 0;
@@ -402,7 +490,7 @@ export default function GamingStoreScreen() {
 
     return (
       <View style={styles.productCard}>
-        {/* Top Badges & Wishlist Button */}
+        {/* Top Badges & Action Buttons */}
         <View style={styles.cardHeader}>
           {isOut ? (
             <View style={[styles.badge, styles.badgeOut]}>
@@ -418,17 +506,28 @@ export default function GamingStoreScreen() {
             </View>
           )}
 
-          <TouchableOpacity
-            style={styles.wishlistBtn}
-            onPress={() => handleToggleWishlist(item)}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={wish ? "heart" : "heart-outline"}
-              size={22}
-              color={wish ? COLORS.accent : COLORS.textSecondary}
-            />
-          </TouchableOpacity>
+          {/* Quick Actions: Edit (✏️) & Wishlist (❤️) */}
+          <View style={{ flexDirection: "row", gap: 6 }}>
+            <TouchableOpacity
+              style={styles.cardIconBtn}
+              onPress={() => openEditProductModal(item)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="pencil" size={16} color={COLORS.gold} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.cardIconBtn}
+              onPress={() => handleToggleWishlist(item)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={wish ? "heart" : "heart-outline"}
+                size={18}
+                color={wish ? COLORS.accent : COLORS.textSecondary}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Product Image */}
@@ -478,7 +577,7 @@ export default function GamingStoreScreen() {
   };
 
   // --------------------------------------------------------------------------
-  // MAIN VIEW TABS
+  // MAIN SCREEN RENDER
   // --------------------------------------------------------------------------
   return (
     <SafeAreaView style={styles.container}>
@@ -491,35 +590,45 @@ export default function GamingStoreScreen() {
           <Text style={styles.brandSubtitle}>High-Performance Gear & Custom Sets</Text>
         </View>
 
-        {/* Top Right Cart Badge Button */}
-        <TouchableOpacity
-          style={styles.cartHeaderBtn}
-          onPress={() => setCartModalVisible(true)}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="cart" size={24} color="#FFF" />
-          <Text style={styles.cartHeaderText}>Cart ({cartTotalQuantity})</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          {/* Top Right Cart Badge Button */}
+          <TouchableOpacity
+            style={styles.cartHeaderBtn}
+            onPress={() => setCartModalVisible(true)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="cart" size={20} color="#FFF" />
+            <Text style={styles.cartHeaderText}>Cart ({cartTotalQuantity})</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* BODY CONTENT BY TAB */}
       {activeTab === "catalog" && (
         <View style={{ flex: 1 }}>
-          {/* Search Bar */}
-          <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color={COLORS.textSecondary} style={{ marginLeft: 12 }} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="ค้นหาสินค้า เช่น Logitech, Razer..."
-              placeholderTextColor={COLORS.textSecondary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery ? (
-              <TouchableOpacity onPress={() => setSearchQuery("")} style={{ padding: 8 }}>
-                <Ionicons name="close-circle" size={18} color={COLORS.textSecondary} />
-              </TouchableOpacity>
-            ) : null}
+          {/* Search Bar & Add Product Button */}
+          <View style={styles.searchRow}>
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={20} color={COLORS.textSecondary} style={{ marginLeft: 12 }} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="ค้นหาสินค้า เช่น Logitech, Razer..."
+                placeholderTextColor={COLORS.textSecondary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              {searchQuery ? (
+                <TouchableOpacity onPress={() => setSearchQuery("")} style={{ padding: 8 }}>
+                  <Ionicons name="close-circle" size={18} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+
+            {/* + Add Product Button */}
+            <TouchableOpacity style={styles.addProductBtn} onPress={openAddProductModal}>
+              <Ionicons name="add" size={22} color="#FFF" />
+              <Text style={styles.addProductBtnText}>เพิ่มสินค้า</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Category Filter Pills */}
@@ -568,10 +677,9 @@ export default function GamingStoreScreen() {
         </View>
       )}
 
-      {/* TAB: GAMING SETS (ร้านจัดให้ & ลูกค้าจัดเอง) */}
+      {/* TAB: GAMING SETS */}
       {activeTab === "sets" && (
         <View style={{ flex: 1, paddingHorizontal: 16 }}>
-          {/* Sub Tabs: ร้านจัดให้ vs จัดเอง */}
           <View style={styles.subTabRow}>
             <TouchableOpacity
               style={[styles.subTabBtn, setsSubTab === "bundles" && styles.subTabBtnActive]}
@@ -628,7 +736,6 @@ export default function GamingStoreScreen() {
               ))}
             </ScrollView>
           ) : (
-            // CUSTOM BUILDER
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
               <Text style={styles.builderHeading}>🛠️ ปรับแต่งเซ็ตเกมมิ่งของคุณเอง</Text>
               <Text style={styles.builderSubheading}>เลือกชิ้นส่วนที่ชอบเพื่อคำนวณราคาและสั่งซื้อพร้อมกัน</Text>
@@ -713,7 +820,6 @@ export default function GamingStoreScreen() {
                 </ScrollView>
               </View>
 
-              {/* Builder Summary Bar */}
               <View style={styles.builderSummary}>
                 <View>
                   <Text style={styles.builderSummaryLabel}>ราคารวมทั้งเซ็ต:</Text>
@@ -749,9 +855,6 @@ export default function GamingStoreScreen() {
               <View style={styles.emptyContainer}>
                 <Ionicons name="heart-dislike-outline" size={64} color={COLORS.textSecondary} />
                 <Text style={styles.emptyText}>ยังไม่มีสินค้าใน Wishlist</Text>
-                <Text style={{ color: COLORS.textSecondary, fontSize: 13, marginTop: 4 }}>
-                  กดรูปหัวใจ ♡ ที่สินค้าเพื่อบันทึกไว้ดูภายหลัง
-                </Text>
               </View>
             }
             renderItem={({ item }) => (
@@ -804,7 +907,6 @@ export default function GamingStoreScreen() {
               </View>
             }
             renderItem={({ item }) => {
-              // Status Color Badge
               let statusBadgeColor = COLORS.badgeLow;
               if (item.status === "Payment Verified") statusBadgeColor = "#3B82F6";
               if (item.status === "Preparing") statusBadgeColor = "#8B5CF6";
@@ -813,7 +915,6 @@ export default function GamingStoreScreen() {
 
               return (
                 <View style={styles.orderCard}>
-                  {/* Order Header */}
                   <View style={styles.orderCardHeader}>
                     <Text style={styles.orderNumber}>Order #{item.order_number}</Text>
                     <View style={[styles.orderStatusBadge, { backgroundColor: statusBadgeColor }]}>
@@ -824,7 +925,6 @@ export default function GamingStoreScreen() {
                     </View>
                   </View>
 
-                  {/* Recipient Details */}
                   <Text style={styles.orderRecipient}>
                     ผู้รับ: {item.recipient_name} | {item.phone}
                   </Text>
@@ -835,7 +935,6 @@ export default function GamingStoreScreen() {
                     วิธีชำระ: {item.payment_method}
                   </Text>
 
-                  {/* Order Items Table */}
                   <View style={styles.orderDivider} />
                   {item.items?.map((it, idx) => (
                     <View key={idx} style={styles.orderItemRow}>
@@ -849,13 +948,11 @@ export default function GamingStoreScreen() {
                   ))}
                   <View style={styles.orderDivider} />
 
-                  {/* Order Total & Action */}
                   <View style={styles.orderTotalRow}>
                     <Text style={styles.orderTotalLabel}>Total:</Text>
                     <Text style={styles.orderTotalPrice}>฿{item.total_amount.toLocaleString()}</Text>
                   </View>
 
-                  {/* Advance Status Simulation Button */}
                   <TouchableOpacity
                     style={styles.advanceStatusBtn}
                     onPress={() => handleAdvanceOrderStatus(item)}
@@ -872,7 +969,7 @@ export default function GamingStoreScreen() {
         </View>
       )}
 
-      {/* TAB: ACCOUNT / PROFILE */}
+      {/* TAB: PROFILE / ACCOUNT */}
       {activeTab === "account" && (
         <View style={{ flex: 1, padding: 20 }}>
           <View style={styles.profileCard}>
@@ -885,29 +982,148 @@ export default function GamingStoreScreen() {
               Cloud DB: ip_std6730251417 (std6730251417)
             </Text>
 
-            {currentUser ? (
-              <TouchableOpacity
-                style={styles.logoutBtn}
-                onPress={async () => {
-                  await logoutApi();
-                  setCurrentUser(null);
-                  Alert.alert("ออกจากระบบแล้ว");
-                }}
-              >
-                <Ionicons name="log-out-outline" size={20} color="#FFF" style={{ marginRight: 8 }} />
-                <Text style={{ color: "#FFF", fontWeight: "bold" }}>ออกจากระบบ</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={styles.loginModalBtn}
-                onPress={() => setAuthModalVisible(true)}
-              >
-                <Text style={{ color: "#FFF", fontWeight: "bold" }}>เข้าสู่ระบบ / ลงทะเบียน</Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity
+              style={styles.quickAddProductBtn}
+              onPress={() => {
+                setActiveTab("catalog");
+                openAddProductModal();
+              }}
+            >
+              <Ionicons name="add-circle" size={20} color="#FFF" style={{ marginRight: 8 }} />
+              <Text style={{ color: "#FFF", fontWeight: "bold" }}>➕ เพิ่มสินค้าใหม่</Text>
+            </TouchableOpacity>
           </View>
         </View>
       )}
+
+      {/* ================================================================== */}
+      {/* ➕✏️ ADD / EDIT PRODUCT MODAL */}
+      {/* ================================================================== */}
+      <Modal visible={productModalVisible} animationType="slide" transparent>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.productFormModalContainer}>
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Ionicons
+                  name={modalMode === "add" ? "add-circle" : "pencil"}
+                  size={24}
+                  color={COLORS.primary}
+                  style={{ marginRight: 8 }}
+                />
+                <Text style={styles.modalTitle}>
+                  {modalMode === "add" ? "เพิ่มสินค้าใหม่" : "แก้ไขข้อมูลสินค้า"}
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => setProductModalVisible(false)}>
+                <Ionicons name="close-circle" size={26} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ flex: 1, paddingHorizontal: 16 }}>
+              <Text style={styles.inputLabel}>ชื่อสินค้า *</Text>
+              <TextInput
+                style={styles.formInput}
+                value={formName}
+                onChangeText={setFormName}
+                placeholder="เช่น Logitech G Pro X Superlight 2"
+                placeholderTextColor={COLORS.textSecondary}
+              />
+
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.inputLabel}>ราคา (บาท) *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={formPrice}
+                    onChangeText={setFormPrice}
+                    keyboardType="numeric"
+                    placeholder="เช่น 3990"
+                    placeholderTextColor={COLORS.textSecondary}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.inputLabel}>สต็อก (Stock) *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={formStock}
+                    onChangeText={setFormStock}
+                    keyboardType="numeric"
+                    placeholder="เช่น 12"
+                    placeholderTextColor={COLORS.textSecondary}
+                  />
+                </View>
+              </View>
+
+              <Text style={styles.inputLabel}>หมวดหมู่สินค้า *</Text>
+              <View style={styles.categorySelectRow}>
+                {["Keyboard", "Mouse", "Headset", "Monitor"].map((cat) => (
+                  <TouchableOpacity
+                    key={cat}
+                    style={[styles.catSelectBtn, formCategory === cat && styles.catSelectBtnActive]}
+                    onPress={() => setFormCategory(cat)}
+                  >
+                    <Text style={[styles.catSelectText, formCategory === cat && styles.catSelectTextActive]}>
+                      {cat}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.inputLabel}>ลิงก์รูปภาพ (Image URL)</Text>
+              <TextInput
+                style={styles.formInput}
+                value={formImage}
+                onChangeText={setFormImage}
+                placeholder="https://..."
+                placeholderTextColor={COLORS.textSecondary}
+              />
+
+              <Text style={styles.inputLabel}>รายละเอียดสินค้า (Description)</Text>
+              <TextInput
+                style={[styles.formInput, { height: 70 }]}
+                value={formDesc}
+                onChangeText={setFormDesc}
+                multiline
+                placeholder="ระบุสเปกหรือคุณสมบัติสินค้า..."
+                placeholderTextColor={COLORS.textSecondary}
+              />
+
+              {/* Action Buttons: Save & Delete (if edit) */}
+              <View style={{ marginVertical: 20, gap: 10 }}>
+                <TouchableOpacity
+                  style={[styles.saveProductBtn, isSavingProduct && { opacity: 0.7 }]}
+                  disabled={isSavingProduct}
+                  onPress={handleSaveProduct}
+                >
+                  {isSavingProduct ? (
+                    <ActivityIndicator color="#FFF" />
+                  ) : (
+                    <>
+                      <Ionicons name="checkmark-circle" size={20} color="#FFF" style={{ marginRight: 8 }} />
+                      <Text style={styles.saveProductBtnText}>
+                        {modalMode === "add" ? "บันทึกสินค้าใหม่" : "บันทึกการแก้ไข"}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                {modalMode === "edit" && selectedProduct && (
+                  <TouchableOpacity
+                    style={styles.deleteProductModalBtn}
+                    onPress={() => handleDeleteProduct(selectedProduct)}
+                  >
+                    <Ionicons name="trash" size={18} color="#FFF" style={{ marginRight: 6 }} />
+                    <Text style={{ color: "#FFF", fontWeight: "bold" }}>ลบสินค้านี้ออกจากระบบ</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       {/* ================================================================== */}
       {/* 🛒 CART MODAL */}
@@ -915,7 +1131,6 @@ export default function GamingStoreScreen() {
       <Modal visible={cartModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.cartModalContainer}>
-            {/* Header */}
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <Ionicons name="cart" size={24} color={COLORS.primary} style={{ marginRight: 8 }} />
@@ -926,7 +1141,6 @@ export default function GamingStoreScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Cart Items List */}
             {cart.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <Ionicons name="cart-outline" size={64} color={COLORS.textSecondary} />
@@ -942,7 +1156,6 @@ export default function GamingStoreScreen() {
                       <Text style={styles.cartItemPrice}>฿{item.product.price.toLocaleString()}</Text>
                       <Text style={styles.cartItemStock}>คงเหลือ: {item.product.stock} ชิ้น</Text>
 
-                      {/* Quantity Control Buttons */}
                       <View style={styles.qtyControlRow}>
                         <TouchableOpacity
                           style={styles.qtyBtn}
@@ -960,7 +1173,6 @@ export default function GamingStoreScreen() {
                       </View>
                     </View>
 
-                    {/* Delete Item Button */}
                     <TouchableOpacity
                       style={styles.cartDeleteBtn}
                       onPress={() => removeFromCart(item.product.id)}
@@ -972,7 +1184,6 @@ export default function GamingStoreScreen() {
               </ScrollView>
             )}
 
-            {/* Cart Footer Total & Checkout */}
             {cart.length > 0 && (
               <View style={styles.cartFooter}>
                 <View style={styles.cartFooterTotalRow}>
@@ -1009,7 +1220,6 @@ export default function GamingStoreScreen() {
             </View>
 
             <ScrollView style={{ flex: 1, paddingHorizontal: 16 }}>
-              {/* Recipient Form */}
               <Text style={styles.formSectionTitle}>1. ข้อมูลผู้รับและสถานที่จัดส่ง</Text>
 
               <Text style={styles.inputLabel}>ชื่อผู้รับ *</Text>
@@ -1065,7 +1275,6 @@ export default function GamingStoreScreen() {
                 </View>
               </View>
 
-              {/* Payment Method */}
               <Text style={styles.formSectionTitle}>2. วิธีการชำระเงิน (Payment Method)</Text>
               <View style={styles.paymentMethodList}>
                 {(["QR PromptPay", "โอนเงิน", "เก็บเงินปลายทาง"] as const).map((method) => {
@@ -1099,7 +1308,6 @@ export default function GamingStoreScreen() {
                 })}
               </View>
 
-              {/* If Transfer Selected -> Slip Upload Section */}
               {paymentMethod === "โอนเงิน" && (
                 <View style={styles.slipUploadContainer}>
                   <Text style={styles.inputLabel}>แนบสลิปการโอนเงิน (Upload Slip) *</Text>
@@ -1122,7 +1330,6 @@ export default function GamingStoreScreen() {
                 </View>
               )}
 
-              {/* Order Summary in Checkout */}
               <View style={styles.checkoutSummaryCard}>
                 <Text style={styles.checkoutSummaryTitle}>สรุปยอดชำระเงิน</Text>
                 <View style={styles.checkoutSummaryRow}>
@@ -1141,7 +1348,6 @@ export default function GamingStoreScreen() {
                 </View>
               </View>
 
-              {/* Submit Order Button */}
               <TouchableOpacity
                 style={[styles.confirmOrderBtn, isSubmittingOrder && { opacity: 0.7 }]}
                 disabled={isSubmittingOrder}
@@ -1287,12 +1493,18 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 13,
   },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 16,
+    marginTop: 12,
+    gap: 10,
+  },
   searchContainer: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.surface,
-    marginHorizontal: 16,
-    marginTop: 12,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -1303,6 +1515,20 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     color: COLORS.text,
     fontSize: 14,
+  },
+  addProductBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    gap: 4,
+  },
+  addProductBtnText: {
+    color: "#FFF",
+    fontWeight: "bold",
+    fontSize: 13,
   },
   categoriesWrapper: {
     marginVertical: 12,
@@ -1374,10 +1600,10 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "bold",
   },
-  wishlistBtn: {
-    backgroundColor: "rgba(15, 23, 42, 0.7)",
+  cardIconBtn: {
+    backgroundColor: "rgba(15, 23, 42, 0.8)",
     borderRadius: 15,
-    padding: 5,
+    padding: 6,
   },
   productImage: {
     width: "100%",
@@ -1807,21 +2033,70 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: 8,
   },
-  logoutBtn: {
+  quickAddProductBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.badgeOut,
+    backgroundColor: COLORS.primary,
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 10,
     marginTop: 20,
   },
-  loginModalBtn: {
+  // Add / Edit Product Modal
+  productFormModalContainer: {
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    height: "90%",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  categorySelectRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 4,
+  },
+  catSelectBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  catSelectBtnActive: {
     backgroundColor: COLORS.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
-    marginTop: 20,
+    borderColor: COLORS.primary,
+  },
+  catSelectText: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  catSelectTextActive: {
+    color: "#FFF",
+  },
+  saveProductBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.primary,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  saveProductBtnText: {
+    color: "#FFF",
+    fontWeight: "bold",
+    fontSize: 15,
+  },
+  deleteProductModalBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.badgeOut,
+    paddingVertical: 12,
+    borderRadius: 12,
   },
   // Modal Common
   modalOverlay: {
