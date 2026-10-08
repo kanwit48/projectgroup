@@ -16,6 +16,11 @@ export interface Product {
   stock: number;
   stock_text?: string;
   category: "Keyboard" | "Mouse" | "Headset" | "Monitor" | string;
+  brand: string;
+  connection: "Wireless" | "Wired" | "Both" | string;
+  dpi?: number | null;
+  size?: string;
+  rating: number;
   location?: string;
   location_text?: string;
   location_count?: number;
@@ -23,9 +28,7 @@ export interface Product {
   image_url?: string;
   status?: string;
   badge_status?: string;
-  rating?: number;
   description?: string;
-  brand?: string;
 }
 
 export interface User {
@@ -90,7 +93,7 @@ export const SERVER_HOST = "119.59.102.161";
 export const SERVER_PORT = "3103";
 export const API_BASE_URL = `http://${SERVER_HOST}:${SERVER_PORT}/api`;
 
-// Default Fallback Products Catalog
+// Default Fallback Products Catalog with Brand, DPI, Connection, Size, Rating
 export const FALLBACK_CLOUD_PRODUCTS: Product[] = [
   // Mouse
   {
@@ -100,8 +103,12 @@ export const FALLBACK_CLOUD_PRODUCTS: Product[] = [
     stock: 12,
     stock_text: "12 in stock",
     category: "Mouse",
-    badge_status: "In Stock",
+    brand: "Logitech",
+    connection: "Wireless",
+    dpi: 32000,
+    size: "Medium (60g)",
     rating: 4.9,
+    badge_status: "In Stock",
     image_url: "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=600",
     description: "เมาส์เกมมิ่งไร้สายน้ำหนักเบาพิเศษ เซนเซอร์ HERO 2 32,000 DPI สวิตช์ LIGHTFORCE ไฮบริด",
   },
@@ -112,8 +119,12 @@ export const FALLBACK_CLOUD_PRODUCTS: Product[] = [
     stock: 3,
     stock_text: "3 in stock",
     category: "Mouse",
-    badge_status: "Low in stock",
+    brand: "Razer",
+    connection: "Wireless",
+    dpi: 30000,
+    size: "Ergonomic (63g)",
     rating: 4.8,
+    badge_status: "Low in stock",
     image_url: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=600",
     description: "เมาส์สายพันธุ์แชมป์ Ergonomic ออกแบบสำหรับมือขวา น้ำหนัก 63g เซนเซอร์ Focus Pro 30K Optical",
   },
@@ -124,8 +135,12 @@ export const FALLBACK_CLOUD_PRODUCTS: Product[] = [
     stock: 0,
     stock_text: "0 in stock",
     category: "Mouse",
-    badge_status: "Out of Stock",
+    brand: "ZOWIE",
+    connection: "Wireless",
+    dpi: 3200,
+    size: "Medium (77g)",
     rating: 4.7,
+    badge_status: "Out of Stock",
     image_url: "https://images.unsplash.com/photo-1626928308213-176c70817c91?w=600",
     description: "เมาส์อีสปอร์ตไร้สายยอดนิยมระดับทัวร์นาเมนต์ ส่งสัญญาณเสถียรด้วย Enhanced Receiver",
   },
@@ -138,8 +153,12 @@ export const FALLBACK_CLOUD_PRODUCTS: Product[] = [
     stock: 8,
     stock_text: "8 in stock",
     category: "Keyboard",
-    badge_status: "In Stock",
+    brand: "SteelSeries",
+    connection: "Wireless",
+    dpi: null,
+    size: "TKL (80%)",
     rating: 4.9,
+    badge_status: "In Stock",
     image_url: "https://images.unsplash.com/photo-1595225476474-87563907a212?w=600",
     description: "คีย์บอร์ดเกมมิ่ง OmniPoint 2.0 ปรับแต่งระยะกดปุ่มได้ 0.2mm - 3.8mm พร้อมจอ OLED Smart Display",
   },
@@ -150,8 +169,12 @@ export const FALLBACK_CLOUD_PRODUCTS: Product[] = [
     stock: 14,
     stock_text: "14 in stock",
     category: "Keyboard",
-    badge_status: "In Stock",
+    brand: "MEZZON",
+    connection: "Wireless",
+    dpi: null,
+    size: "Full-size (100%)",
     rating: 4.8,
+    badge_status: "In Stock",
     image_url: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=600",
     description: "คีย์บอร์ดเกมมิ่งไร้สาย Mechanical Full-size ไฟ RGB ปรับแต่งได้ 18 โหมด พร้อมปุ่ม Multi-function Knob",
   },
@@ -162,8 +185,12 @@ export const FALLBACK_CLOUD_PRODUCTS: Product[] = [
     stock: 2,
     stock_text: "2 in stock",
     category: "Keyboard",
-    badge_status: "Low in stock",
+    brand: "Logitech",
+    connection: "Wireless",
+    dpi: null,
+    size: "Low-Profile Full-size",
     rating: 4.8,
+    badge_status: "Low in stock",
     image_url: "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=600",
     description: "คีย์บอร์ดไร้สายสวิตช์ Low Profile อะลูมิเนียมเกรดอากาศยาน บางเฉียบ หรูหราและตอบสนองฉับไว",
   },
@@ -176,10 +203,14 @@ export const FALLBACK_CLOUD_PRODUCTS: Product[] = [
     stock: 15,
     stock_text: "15 in stock",
     category: "Headset",
-    badge_status: "In Stock",
+    brand: "HyperX",
+    connection: "Wireless",
+    dpi: null,
+    size: "Over-Ear (300h Battery)",
     rating: 4.9,
+    badge_status: "In Stock",
     image_url: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=600",
-    description: "หูฟังเกมมิ่งไร้สาย แบตเตอรี่ใช้งานได้ 300 ชั่วโมง ระบบเสียง DTS Headphone:X Spatial Audio",
+    description: "หูฟังเกมมิ่งไร้สาย แบตเตอรี่ใช้งานได้ยาวนาน 300 ชั่วโมง ระบบเสียง DTS Headphone:X Spatial Audio",
   },
   {
     id: "8",
@@ -188,8 +219,12 @@ export const FALLBACK_CLOUD_PRODUCTS: Product[] = [
     stock: 3,
     stock_text: "3 in stock",
     category: "Headset",
-    badge_status: "Low in stock",
+    brand: "Razer",
+    connection: "Wireless",
+    dpi: null,
+    size: "Over-Ear (320g)",
     rating: 4.8,
+    badge_status: "Low in stock",
     image_url: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600",
     description: "หูฟังสำหรับนักกีฬาอีสปอร์ต ไมโครโฟน HyperClear Super Wideband ไดรเวอร์ TriForce Titanium 50mm",
   },
@@ -200,8 +235,12 @@ export const FALLBACK_CLOUD_PRODUCTS: Product[] = [
     stock: 5,
     stock_text: "5 in stock",
     category: "Headset",
-    badge_status: "In Stock",
+    brand: "SteelSeries",
+    connection: "Wireless",
+    dpi: null,
+    size: "Over-Ear (ANC)",
     rating: 4.9,
+    badge_status: "In Stock",
     image_url: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600",
     description: "หูฟังระดับท็อป พรีเมียม Hi-Res Audio พร้อมระบบตัดเสียงรบกวน Active Noise Cancelling (ANC)",
   },
@@ -214,8 +253,12 @@ export const FALLBACK_CLOUD_PRODUCTS: Product[] = [
     stock: 4,
     stock_text: "4 in stock",
     category: "Monitor",
-    badge_status: "In Stock",
+    brand: "ASUS ROG",
+    connection: "Wired",
+    dpi: null,
+    size: "24.5 Inch",
     rating: 4.9,
+    badge_status: "In Stock",
     image_url: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600",
     description: "จอเกมมิ่งระดับโปร 24.5 นิ้ว Fast IPS 360Hz 1ms รองรับ NVIDIA G-SYNC และ Reflex Latency Analyzer",
   },
@@ -226,8 +269,12 @@ export const FALLBACK_CLOUD_PRODUCTS: Product[] = [
     stock: 1,
     stock_text: "1 in stock",
     category: "Monitor",
-    badge_status: "Low in stock",
+    brand: "BenQ ZOWIE",
+    connection: "Wired",
+    dpi: null,
+    size: "24.5 Inch",
     rating: 4.9,
+    badge_status: "Low in stock",
     image_url: "https://images.unsplash.com/photo-1586210579191-33b45e38fa2c?w=600",
     description: "จอเกมมิ่งแข่งขันอีสปอร์ตระดับโลก เทคโนโลยี DyAc+ ลดภาพเบลอจากการสั่นไหว พร้อมฐานขนาดกะทัดรัด",
   },
@@ -238,8 +285,12 @@ export const FALLBACK_CLOUD_PRODUCTS: Product[] = [
     stock: 0,
     stock_text: "0 in stock",
     category: "Monitor",
-    badge_status: "Out of Stock",
+    brand: "LG",
+    connection: "Wired",
+    dpi: null,
+    size: "27 Inch",
     rating: 5.0,
+    badge_status: "Out of Stock",
     image_url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600",
     description: "จอเกมมิ่ง OLED ความละเอียด 2K QHD รีเฟรชเรท 240Hz ความเร็ว 0.03ms สีดำลึกและคมชัดสูงสุด",
   },
@@ -355,7 +406,7 @@ let inMemoryOrders: Order[] = [
     ],
   },
 ];
-let inMemoryWishlistIds: (number | string)[] = ["1", "4", "7"]; // Saved IDs
+let inMemoryWishlistIds: (number | string)[] = ["1", "4", "7"];
 
 /**
  * Fetch Products
@@ -364,8 +415,19 @@ export async function fetchProductsApi(): Promise<Product[]> {
   try {
     const data = await apiCall("/products");
     if (Array.isArray(data) && data.length > 0) {
-      inMemoryProductStore = data;
-      return data;
+      // Merge extra filter props from seed if missing from DB
+      inMemoryProductStore = data.map((d: any) => {
+        const seed = FALLBACK_CLOUD_PRODUCTS.find((p) => String(p.id) === String(d.id));
+        return {
+          ...d,
+          brand: d.brand || seed?.brand || "Logitech",
+          connection: d.connection || seed?.connection || "Wireless",
+          dpi: d.dpi !== undefined ? d.dpi : seed?.dpi,
+          size: d.size || seed?.size || "Standard",
+          rating: Number(d.rating || seed?.rating || 4.8),
+        };
+      });
+      return inMemoryProductStore;
     }
     return inMemoryProductStore;
   } catch (error) {
@@ -385,9 +447,13 @@ export async function createProductApi(product: Partial<Product>): Promise<{ suc
     stock: Number(product.stock) || 0,
     stock_text: `${product.stock || 0} in stock`,
     category: product.category || "Mouse",
+    brand: product.brand || "Logitech",
+    connection: product.connection || "Wireless",
+    dpi: product.dpi !== undefined ? product.dpi : (product.category === "Mouse" ? 16000 : null),
+    size: product.size || "Standard",
+    rating: product.rating || 5.0,
     image_url: product.image_url || DEFAULT_PRODUCT_IMAGE,
     badge_status: (product.stock || 0) <= 0 ? "Out of Stock" : (product.stock || 0) <= 3 ? "Low in stock" : "In Stock",
-    rating: 5.0,
     description: product.description || "",
   };
 
@@ -447,7 +513,7 @@ export async function deleteProductApi(id: string | number): Promise<{ success: 
 }
 
 /**
- * Orders API: Fetch Orders
+ * Orders API
  */
 export async function fetchOrdersApi(userId?: string): Promise<Order[]> {
   try {
@@ -462,10 +528,6 @@ export async function fetchOrdersApi(userId?: string): Promise<Order[]> {
   }
 }
 
-/**
- * Orders API: Create Order (Checkout)
- * Deducts stock from each item purchased!
- */
 export async function createOrderApi(orderData: {
   user_id?: string;
   recipient_name: string;
@@ -478,7 +540,6 @@ export async function createOrderApi(orderData: {
   items: { product_id?: number | string; product_name: string; price: number; quantity: number; image_url?: string }[];
   total_amount: number;
 }): Promise<{ success: boolean; order_number?: string; order_id?: number | string; message?: string }> {
-  // Deduct stock in in-memory store
   for (const item of orderData.items) {
     if (item.product_id) {
       inMemoryProductStore = inMemoryProductStore.map((p) => {
@@ -496,7 +557,6 @@ export async function createOrderApi(orderData: {
     }
   }
 
-  // Generate order number
   const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
   const rand = Math.floor(100 + Math.random() * 900);
   const orderNumber = `ORD-${dateStr}-${rand}`;
@@ -531,10 +591,6 @@ export async function createOrderApi(orderData: {
   }
 }
 
-/**
- * Orders API: Update Order Status
- * Workflow: Waiting for Payment -> Payment Verified -> Preparing -> Shipping -> Delivered
- */
 export async function updateOrderStatusApi(orderId: number | string, status: OrderStatus): Promise<{ success: boolean }> {
   inMemoryOrders = inMemoryOrders.map((o) => {
     if (String(o.id) === String(orderId)) {
@@ -554,9 +610,6 @@ export async function updateOrderStatusApi(orderId: number | string, status: Ord
   }
 }
 
-/**
- * Wishlist API
- */
 export function getWishlistIds(): (number | string)[] {
   return inMemoryWishlistIds;
 }
@@ -565,10 +618,10 @@ export function toggleWishlistId(productId: number | string): boolean {
   const strId = String(productId);
   if (inMemoryWishlistIds.some((id) => String(id) === strId)) {
     inMemoryWishlistIds = inMemoryWishlistIds.filter((id) => String(id) !== strId);
-    return false; // Removed
+    return false;
   } else {
     inMemoryWishlistIds.push(productId);
-    return true; // Added
+    return true;
   }
 }
 

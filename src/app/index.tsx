@@ -6,12 +6,13 @@
  * 1. 🛒 Cart System (+ / - quantity, remove, total calculation, stock check, Cart badge)
  * 2. 💳 Checkout System (Name, Phone, Address, Province, Zip, Bank/PromptPay/COD, Slip Upload)
  * 3. 📦 Order System (Order #ORD-..., Items, Total, Status workflow)
- * 4. ❤️ Wishlist System (♡ / ♥ toggle, My Wishlist page, Add to Cart)
- * 5. 📦 Stock System (Stock count, ⚠️ Only X left, ❌ Out of Stock, disable button)
- * 6. 🏷️ Categories (All Products, ⌨️ Keyboard, 🖱️ Mouse, 🎧 Headset, 🖥️ Monitor)
- * 7. 🎮 Gaming Sets: ร้านจัดให้ (Bundles) & ลูกค้าจัดเอง (Custom Builder)
- * 8. ➕✏️🗑️ Product Management: Add, Edit, Delete Product with Modal & Cloud DB
- * 9. 🔐 Authentication System: Sign In, Sign Up, Guest Login, Logout, Demo Accounts
+ * 4. 🔍 Multi-Criteria Product Filter (Category, Price, Brand, DPI, Connection, Size, Rating)
+ * 5. ❤️ Wishlist System (♡ / ♥ toggle, My Wishlist page, Add to Cart)
+ * 6. 📦 Stock System (Stock count, ⚠️ Only X left, ❌ Out of Stock, disable button)
+ * 7. 🏷️ Categories (All Products, ⌨️ Keyboard, 🖱️ Mouse, 🎧 Headset, 🖥️ Monitor)
+ * 8. 🎮 Gaming Sets: ร้านจัดให้ (Bundles) & ลูกค้าจัดเอง (Custom Builder)
+ * 9. ➕✏️🗑️ Product Management: Add, Edit, Delete Product with Modal & Cloud DB
+ * 10. 🔐 Authentication System: Sign In, Sign Up, Guest Login, Logout, Demo Accounts
  * ============================================================================
  */
 
@@ -75,6 +76,7 @@ const COLORS = {
   badgeLow: "#F59E0B",      // Amber
   badgeOut: "#EF4444",      // Red
   gold: "#FBBF24",
+  cyan: "#06B6D4",
 };
 
 const CATEGORIES = [
@@ -83,6 +85,56 @@ const CATEGORIES = [
   { id: "Mouse", label: "🖱️ Mouse" },
   { id: "Headset", label: "🎧 Headset" },
   { id: "Monitor", label: "🖥️ Monitor" },
+];
+
+const BRANDS = [
+  "All",
+  "Logitech",
+  "Razer",
+  "SteelSeries",
+  "HyperX",
+  "ZOWIE",
+  "BenQ ZOWIE",
+  "ASUS ROG",
+  "LG",
+  "MEZZON",
+];
+
+const PRICE_RANGES = [
+  { id: "all", label: "ทุกช่วงราคา" },
+  { id: "under-3000", label: "ต่ำกว่า ฿3,000", min: 0, max: 3000 },
+  { id: "3000-6000", label: "฿3,000 - ฿6,000", min: 3000, max: 6000 },
+  { id: "6000-15000", label: "฿6,000 - ฿15,000", min: 6000, max: 15000 },
+  { id: "over-15000", label: "มากกว่า ฿15,000", min: 15000, max: Infinity },
+];
+
+const DPI_OPTIONS = [
+  { id: "all", label: "ทุกความละเอียด" },
+  { id: "over-30k", label: "30,000+ DPI (Pro Spec)", min: 30000, max: Infinity },
+  { id: "16k-30k", label: "16,000 - 30,000 DPI", min: 16000, max: 30000 },
+  { id: "under-16k", label: "ต่ำกว่า 16,000 DPI", min: 0, max: 16000 },
+];
+
+const CONNECTIONS = [
+  { id: "all", label: "ทุกการเชื่อมต่อ" },
+  { id: "Wireless", label: "📶 ไร้สาย (Wireless)" },
+  { id: "Wired", label: "🔌 มีสาย (Wired)" },
+];
+
+const SIZE_OPTIONS = [
+  { id: "all", label: "ทุกขนาด" },
+  { id: "TKL", label: "TKL (80%)" },
+  { id: "Full-size", label: "Full-size (100%)" },
+  { id: "24.5", label: "24.5 นิ้ว" },
+  { id: "27", label: "27 นิ้ว" },
+  { id: "Over-Ear", label: "Over-Ear" },
+];
+
+const RATING_OPTIONS = [
+  { id: "all", label: "ทุกคะแนน" },
+  { id: "4.9", label: "4.9★ ขึ้นไป", min: 4.9 },
+  { id: "4.8", label: "4.8★ ขึ้นไป", min: 4.8 },
+  { id: "4.5", label: "4.5★ ขึ้นไป", min: 4.5 },
 ];
 
 export default function GamingStoreScreen() {
@@ -94,7 +146,16 @@ export default function GamingStoreScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter States
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedPriceRange, setSelectedPriceRange] = useState("all");
+  const [selectedBrand, setSelectedBrand] = useState("All");
+  const [selectedDpi, setSelectedDpi] = useState("all");
+  const [selectedConnection, setSelectedConnection] = useState("all");
+  const [selectedSize, setSelectedSize] = useState("all");
+  const [selectedRating, setSelectedRating] = useState("all");
 
   // Cart State
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -135,6 +196,11 @@ export default function GamingStoreScreen() {
   const [formPrice, setFormPrice] = useState("");
   const [formStock, setFormStock] = useState("");
   const [formCategory, setFormCategory] = useState("Keyboard");
+  const [formBrand, setFormBrand] = useState("Logitech");
+  const [formConnection, setFormConnection] = useState("Wireless");
+  const [formDpi, setFormDpi] = useState("");
+  const [formSize, setFormSize] = useState("");
+  const [formRating, setFormRating] = useState("5.0");
   const [formImage, setFormImage] = useState("");
   const [formDesc, setFormDesc] = useState("");
   const [isSavingProduct, setIsSavingProduct] = useState(false);
@@ -171,7 +237,107 @@ export default function GamingStoreScreen() {
   };
 
   // --------------------------------------------------------------------------
-  // Auth Handlers (Login / Signup / Guest / Logout)
+  // Filter Reset & Active Count
+  // --------------------------------------------------------------------------
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (selectedCategory !== "All") count++;
+    if (selectedPriceRange !== "all") count++;
+    if (selectedBrand !== "All") count++;
+    if (selectedDpi !== "all") count++;
+    if (selectedConnection !== "all") count++;
+    if (selectedSize !== "all") count++;
+    if (selectedRating !== "all") count++;
+    return count;
+  }, [selectedCategory, selectedPriceRange, selectedBrand, selectedDpi, selectedConnection, selectedSize, selectedRating]);
+
+  const handleResetFilters = () => {
+    setSelectedCategory("All");
+    setSelectedPriceRange("all");
+    setSelectedBrand("All");
+    setSelectedDpi("all");
+    setSelectedConnection("all");
+    setSelectedSize("all");
+    setSelectedRating("all");
+  };
+
+  // Filtered Products Multi-Criteria
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      // 1. Search Query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchName = p.name.toLowerCase().includes(q);
+        const matchBrand = p.brand && p.brand.toLowerCase().includes(q);
+        const matchDesc = p.description && p.description.toLowerCase().includes(q);
+        if (!matchName && !matchBrand && !matchDesc) return false;
+      }
+
+      // 2. Category
+      if (selectedCategory !== "All" && p.category.toLowerCase() !== selectedCategory.toLowerCase()) {
+        return false;
+      }
+
+      // 3. Price Range
+      if (selectedPriceRange !== "all") {
+        const range = PRICE_RANGES.find((r) => r.id === selectedPriceRange);
+        if (range && (p.price < range.min! || p.price > range.max!)) {
+          return false;
+        }
+      }
+
+      // 4. Brand
+      if (selectedBrand !== "All" && p.brand !== selectedBrand) {
+        return false;
+      }
+
+      // 5. DPI (for mice)
+      if (selectedDpi !== "all") {
+        if (!p.dpi) return false;
+        const dpiOpt = DPI_OPTIONS.find((d) => d.id === selectedDpi);
+        if (dpiOpt && (p.dpi < dpiOpt.min! || p.dpi > dpiOpt.max!)) {
+          return false;
+        }
+      }
+
+      // 6. Connection
+      if (selectedConnection !== "all") {
+        if (p.connection !== selectedConnection && p.connection !== "Both") {
+          return false;
+        }
+      }
+
+      // 7. Size
+      if (selectedSize !== "all") {
+        if (!p.size || !p.size.toLowerCase().includes(selectedSize.toLowerCase())) {
+          return false;
+        }
+      }
+
+      // 8. Rating
+      if (selectedRating !== "all") {
+        const ratingOpt = RATING_OPTIONS.find((r) => r.id === selectedRating);
+        if (ratingOpt && p.rating < ratingOpt.min!) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [
+    products,
+    searchQuery,
+    selectedCategory,
+    selectedPriceRange,
+    selectedBrand,
+    selectedDpi,
+    selectedConnection,
+    selectedSize,
+    selectedRating,
+  ]);
+
+  // --------------------------------------------------------------------------
+  // Auth Handlers
   // --------------------------------------------------------------------------
   const handleLogin = async () => {
     if (!authUsername.trim() || !authPassword) {
@@ -252,6 +418,11 @@ export default function GamingStoreScreen() {
     setFormPrice("");
     setFormStock("10");
     setFormCategory("Keyboard");
+    setFormBrand("Logitech");
+    setFormConnection("Wireless");
+    setFormDpi("");
+    setFormSize("Standard");
+    setFormRating("4.9");
     setFormImage("");
     setFormDesc("");
     setProductModalVisible(true);
@@ -264,6 +435,11 @@ export default function GamingStoreScreen() {
     setFormPrice(String(product.price));
     setFormStock(String(product.stock));
     setFormCategory(product.category || "Keyboard");
+    setFormBrand(product.brand || "Logitech");
+    setFormConnection(product.connection || "Wireless");
+    setFormDpi(product.dpi ? String(product.dpi) : "");
+    setFormSize(product.size || "");
+    setFormRating(String(product.rating || 4.8));
     setFormImage(product.image_url || "");
     setFormDesc(product.description || "");
     setProductModalVisible(true);
@@ -276,6 +452,8 @@ export default function GamingStoreScreen() {
     }
     const priceNum = Number(formPrice) || 0;
     const stockNum = Number(formStock) || 0;
+    const dpiNum = formDpi ? Number(formDpi) : null;
+    const ratingNum = Number(formRating) || 5.0;
 
     setIsSavingProduct(true);
     try {
@@ -285,6 +463,11 @@ export default function GamingStoreScreen() {
           price: priceNum,
           stock: stockNum,
           category: formCategory,
+          brand: formBrand,
+          connection: formConnection,
+          dpi: dpiNum,
+          size: formSize.trim() || "Standard",
+          rating: ratingNum,
           image_url: formImage.trim() || DEFAULT_PRODUCT_IMAGE,
           description: formDesc.trim(),
         });
@@ -295,6 +478,11 @@ export default function GamingStoreScreen() {
           price: priceNum,
           stock: stockNum,
           category: formCategory,
+          brand: formBrand,
+          connection: formConnection,
+          dpi: dpiNum,
+          size: formSize.trim() || selectedProduct.size,
+          rating: ratingNum,
           image_url: formImage.trim() || selectedProduct.image_url,
           description: formDesc.trim(),
         });
@@ -542,26 +730,12 @@ export default function GamingStoreScreen() {
     Alert.alert("🎮 เพิ่มเซ็ตลงตะกร้า", `เพิ่มชิ้นส่วนที่จัดเองทั้งหมด ${items.length} รายการลงในตะกร้าแล้ว`);
   };
 
-  // --------------------------------------------------------------------------
-  // Filtered Catalog
-  // --------------------------------------------------------------------------
-  const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
-      const matchesSearch =
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()));
-      const matchesCategory =
-        selectedCategory === "All" || p.category.toLowerCase() === selectedCategory.toLowerCase();
-      return matchesSearch && matchesCategory;
-    });
-  }, [products, searchQuery, selectedCategory]);
-
   const wishlistProducts = useMemo(() => {
     return products.filter((p) => wishlistIds.some((id) => String(id) === String(p.id)));
   }, [products, wishlistIds]);
 
   // --------------------------------------------------------------------------
-  // Render Product Card
+  // Render Product Card with Spec Tags
   // --------------------------------------------------------------------------
   const renderProductCard = ({ item }: { item: Product }) => {
     const isOut = item.stock <= 0;
@@ -619,10 +793,37 @@ export default function GamingStoreScreen() {
 
         {/* Category & Title */}
         <View style={styles.cardBody}>
-          <Text style={styles.productCategory}>{item.category}</Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <Text style={styles.productCategory}>{item.category}</Text>
+            <Text style={styles.productRatingText}>⭐ {item.rating?.toFixed(1) || "5.0"}</Text>
+          </View>
+
           <Text style={styles.productName} numberOfLines={2}>
             {item.name}
           </Text>
+
+          {/* Spec Tags Row: Brand | Connection | DPI / Size */}
+          <View style={styles.specTagsContainer}>
+            <View style={styles.specTag}>
+              <Text style={styles.specTagText}>{item.brand}</Text>
+            </View>
+            <View style={styles.specTag}>
+              <Text style={styles.specTagText}>
+                {item.connection === "Wireless" ? "📶 Wireless" : "🔌 Wired"}
+              </Text>
+            </View>
+            {item.dpi ? (
+              <View style={[styles.specTag, { backgroundColor: "rgba(6, 182, 212, 0.15)" }]}>
+                <Text style={[styles.specTagText, { color: COLORS.cyan }]}>
+                  {item.dpi.toLocaleString()} DPI
+                </Text>
+              </View>
+            ) : item.size ? (
+              <View style={styles.specTag}>
+                <Text style={styles.specTagText}>{item.size}</Text>
+              </View>
+            ) : null}
+          </View>
 
           {/* Price */}
           <Text style={styles.productPrice}>฿{item.price.toLocaleString()}</Text>
@@ -714,13 +915,13 @@ export default function GamingStoreScreen() {
       {/* TAB: CATALOG */}
       {activeTab === "catalog" && (
         <View style={{ flex: 1 }}>
-          {/* Search Bar & Add Product Button */}
+          {/* Search Bar & Action Buttons */}
           <View style={styles.searchRow}>
             <View style={styles.searchContainer}>
               <Ionicons name="search" size={20} color={COLORS.textSecondary} style={{ marginLeft: 12 }} />
               <TextInput
                 style={styles.searchInput}
-                placeholder="ค้นหาสินค้า เช่น Logitech, Razer..."
+                placeholder="ค้นหาสินค้า หรือ แบรนด์..."
                 placeholderTextColor={COLORS.textSecondary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -732,14 +933,37 @@ export default function GamingStoreScreen() {
               ) : null}
             </View>
 
+            {/* Filter Modal Trigger Button */}
+            <TouchableOpacity
+              style={[styles.filterTriggerBtn, activeFilterCount > 0 && styles.filterTriggerBtnActive]}
+              onPress={() => setFilterModalVisible(true)}
+            >
+              <Ionicons name="options-outline" size={18} color="#FFF" />
+              <Text style={styles.filterTriggerBtnText}>
+                ตัวกรอง {activeFilterCount > 0 ? `(${activeFilterCount})` : ""}
+              </Text>
+            </TouchableOpacity>
+
             {/* + Add Product Button */}
             <TouchableOpacity style={styles.addProductBtn} onPress={openAddProductModal}>
               <Ionicons name="add" size={22} color="#FFF" />
-              <Text style={styles.addProductBtnText}>เพิ่มสินค้า</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Category Filter Pills */}
+          {/* Active Filter Chips / Reset Bar */}
+          <View style={styles.filterStatusRow}>
+            <Text style={styles.filterResultCount}>
+              พบ {filteredProducts.length} รายการ (จากทั้งหมด {products.length})
+            </Text>
+            {activeFilterCount > 0 && (
+              <TouchableOpacity style={styles.resetFilterBtn} onPress={handleResetFilters}>
+                <Ionicons name="refresh" size={14} color={COLORS.gold} />
+                <Text style={styles.resetFilterText}>ล้างตัวกรอง</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Category Filter Horizontal Pills */}
           <View style={styles.categoriesWrapper}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryList}>
               {CATEGORIES.map((cat) => {
@@ -776,8 +1000,14 @@ export default function GamingStoreScreen() {
               refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
               ListEmptyComponent={
                 <View style={styles.emptyContainer}>
-                  <Ionicons name="cube-outline" size={64} color={COLORS.textSecondary} />
-                  <Text style={styles.emptyText}>ไม่พบสินค้าในหมวดหมู่นี้</Text>
+                  <Ionicons name="filter-circle-outline" size={64} color={COLORS.textSecondary} />
+                  <Text style={styles.emptyText}>ไม่พบสินค้าที่ตรงกับเงื่อนไขตัวกรอง</Text>
+                  <TouchableOpacity
+                    style={[styles.resetFilterBtn, { marginTop: 12, paddingHorizontal: 16, paddingVertical: 8 }]}
+                    onPress={handleResetFilters}
+                  >
+                    <Text style={{ color: COLORS.gold, fontWeight: "bold" }}>กดเพื่อล้างตัวกรองทั้งหมด</Text>
+                  </TouchableOpacity>
                 </View>
               }
             />
@@ -1158,6 +1388,159 @@ export default function GamingStoreScreen() {
       )}
 
       {/* ================================================================== */}
+      {/* 🔍 MULTI-CRITERIA FILTER MODAL */}
+      {/* ================================================================== */}
+      <Modal visible={filterModalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.filterModalContainer}>
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Ionicons name="options" size={22} color={COLORS.primary} style={{ marginRight: 8 }} />
+                <Text style={styles.modalTitle}>ตัวกรองสินค้าขั้นสูง (Filters)</Text>
+              </View>
+              <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
+                <Ionicons name="close-circle" size={26} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ flex: 1, paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
+              {/* 1. ประเภท (Category) */}
+              <Text style={styles.filterGroupTitle}>1. 🏷️ ประเภทสินค้า (Category)</Text>
+              <View style={styles.filterOptionGrid}>
+                {CATEGORIES.map((cat) => (
+                  <TouchableOpacity
+                    key={cat.id}
+                    style={[styles.filterChoicePill, selectedCategory === cat.id && styles.filterChoicePillActive]}
+                    onPress={() => setSelectedCategory(cat.id)}
+                  >
+                    <Text style={[styles.filterChoiceText, selectedCategory === cat.id && styles.filterChoiceTextActive]}>
+                      {cat.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* 2. ช่วงราคา (Price Range) */}
+              <Text style={styles.filterGroupTitle}>2. 💰 ช่วงราคา (Price Range)</Text>
+              <View style={styles.filterOptionGrid}>
+                {PRICE_RANGES.map((pr) => (
+                  <TouchableOpacity
+                    key={pr.id}
+                    style={[styles.filterChoicePill, selectedPriceRange === pr.id && styles.filterChoicePillActive]}
+                    onPress={() => setSelectedPriceRange(pr.id)}
+                  >
+                    <Text style={[styles.filterChoiceText, selectedPriceRange === pr.id && styles.filterChoiceTextActive]}>
+                      {pr.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* 3. แบรนด์ (Brand) */}
+              <Text style={styles.filterGroupTitle}>3. 🏢 แบรนด์ (Brand)</Text>
+              <View style={styles.filterOptionGrid}>
+                {BRANDS.map((br) => (
+                  <TouchableOpacity
+                    key={br}
+                    style={[styles.filterChoicePill, selectedBrand === br && styles.filterChoicePillActive]}
+                    onPress={() => setSelectedBrand(br)}
+                  >
+                    <Text style={[styles.filterChoiceText, selectedBrand === br && styles.filterChoiceTextActive]}>
+                      {br}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* 4. DPI (สำหรับเมาส์) */}
+              <Text style={styles.filterGroupTitle}>4. 🎯 ความละเอียด DPI (Mouse Spec)</Text>
+              <View style={styles.filterOptionGrid}>
+                {DPI_OPTIONS.map((dpi) => (
+                  <TouchableOpacity
+                    key={dpi.id}
+                    style={[styles.filterChoicePill, selectedDpi === dpi.id && styles.filterChoicePillActive]}
+                    onPress={() => setSelectedDpi(dpi.id)}
+                  >
+                    <Text style={[styles.filterChoiceText, selectedDpi === dpi.id && styles.filterChoiceTextActive]}>
+                      {dpi.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* 5. การเชื่อมต่อ (Connection) */}
+              <Text style={styles.filterGroupTitle}>5. 📶 การเชื่อมต่อ (Connection)</Text>
+              <View style={styles.filterOptionGrid}>
+                {CONNECTIONS.map((conn) => (
+                  <TouchableOpacity
+                    key={conn.id}
+                    style={[styles.filterChoicePill, selectedConnection === conn.id && styles.filterChoicePillActive]}
+                    onPress={() => setSelectedConnection(conn.id)}
+                  >
+                    <Text style={[styles.filterChoiceText, selectedConnection === conn.id && styles.filterChoiceTextActive]}>
+                      {conn.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* 6. ขนาด (Size / Form Factor) */}
+              <Text style={styles.filterGroupTitle}>6. 📐 ขนาด / ฟอร์มแฟกเตอร์ (Size)</Text>
+              <View style={styles.filterOptionGrid}>
+                {SIZE_OPTIONS.map((sz) => (
+                  <TouchableOpacity
+                    key={sz.id}
+                    style={[styles.filterChoicePill, selectedSize === sz.id && styles.filterChoicePillActive]}
+                    onPress={() => setSelectedSize(sz.id)}
+                  >
+                    <Text style={[styles.filterChoiceText, selectedSize === sz.id && styles.filterChoiceTextActive]}>
+                      {sz.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* 7. คะแนนรีวิว (Rating) */}
+              <Text style={styles.filterGroupTitle}>7. ⭐ คะแนนรีวิว (Rating)</Text>
+              <View style={styles.filterOptionGrid}>
+                {RATING_OPTIONS.map((rt) => (
+                  <TouchableOpacity
+                    key={rt.id}
+                    style={[styles.filterChoicePill, selectedRating === rt.id && styles.filterChoicePillActive]}
+                    onPress={() => setSelectedRating(rt.id)}
+                  >
+                    <Text style={[styles.filterChoiceText, selectedRating === rt.id && styles.filterChoiceTextActive]}>
+                      {rt.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Filter Modal Action Buttons */}
+              <View style={{ flexDirection: "row", gap: 10, marginVertical: 24 }}>
+                <TouchableOpacity
+                  style={styles.filterResetActionBtn}
+                  onPress={handleResetFilters}
+                >
+                  <Ionicons name="refresh" size={18} color={COLORS.textSecondary} style={{ marginRight: 6 }} />
+                  <Text style={{ color: COLORS.textSecondary, fontWeight: "bold" }}>ล้างทั้งหมด</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.filterApplyActionBtn}
+                  onPress={() => setFilterModalVisible(false)}
+                >
+                  <Text style={{ color: "#FFF", fontWeight: "bold", fontSize: 15 }}>
+                    ดูผลลัพธ์ ({filteredProducts.length} รายการ)
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ================================================================== */}
       {/* 🔐 AUTH MODAL (LOGIN & SIGN UP) */}
       {/* ================================================================== */}
       <Modal visible={authModalVisible} animationType="slide" transparent>
@@ -1364,6 +1747,53 @@ export default function GamingStoreScreen() {
                     </Text>
                   </TouchableOpacity>
                 ))}
+              </View>
+
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.inputLabel}>แบรนด์ (Brand) *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={formBrand}
+                    onChangeText={setFormBrand}
+                    placeholder="เช่น Logitech"
+                    placeholderTextColor={COLORS.textSecondary}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.inputLabel}>การเชื่อมต่อ *</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={formConnection}
+                    onChangeText={setFormConnection}
+                    placeholder="Wireless / Wired"
+                    placeholderTextColor={COLORS.textSecondary}
+                  />
+                </View>
+              </View>
+
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.inputLabel}>DPI (สำหรับเมาส์)</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={formDpi}
+                    onChangeText={setFormDpi}
+                    keyboardType="numeric"
+                    placeholder="เช่น 32000"
+                    placeholderTextColor={COLORS.textSecondary}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.inputLabel}>ขนาด / ไซส์</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={formSize}
+                    onChangeText={setFormSize}
+                    placeholder="เช่น TKL, 24.5 นิ้ว"
+                    placeholderTextColor={COLORS.textSecondary}
+                  />
+                </View>
               </View>
 
               <Text style={styles.inputLabel}>ลิงก์รูปภาพ (Image URL)</Text>
@@ -1822,7 +2252,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginHorizontal: 16,
     marginTop: 12,
-    gap: 10,
+    gap: 8,
   },
   searchContainer: {
     flex: 1,
@@ -1840,22 +2270,64 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 14,
   },
-  addProductBtn: {
+  filterTriggerBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.surface,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     gap: 4,
   },
-  addProductBtnText: {
+  filterTriggerBtnActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  filterTriggerBtnText: {
     color: "#FFF",
     fontWeight: "bold",
-    fontSize: 13,
+    fontSize: 12,
+  },
+  addProductBtn: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  filterStatusRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  filterResultCount: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+  },
+  resetFilterBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(251, 191, 36, 0.15)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.gold,
+    gap: 4,
+  },
+  resetFilterText: {
+    color: COLORS.gold,
+    fontSize: 11,
+    fontWeight: "bold",
   },
   categoriesWrapper: {
-    marginVertical: 12,
+    marginVertical: 8,
   },
   categoryList: {
     paddingHorizontal: 16,
@@ -1931,17 +2403,22 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: "100%",
-    height: 130,
+    height: 125,
     backgroundColor: COLORS.surfaceLight,
   },
   cardBody: {
     padding: 10,
   },
   productCategory: {
-    fontSize: 11,
+    fontSize: 10,
     color: COLORS.primary,
     fontWeight: "700",
     textTransform: "uppercase",
+  },
+  productRatingText: {
+    fontSize: 11,
+    color: COLORS.gold,
+    fontWeight: "bold",
   },
   productName: {
     fontSize: 13,
@@ -1950,11 +2427,28 @@ const styles = StyleSheet.create({
     marginTop: 2,
     minHeight: 34,
   },
+  specTagsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
+    marginTop: 4,
+  },
+  specTag: {
+    backgroundColor: COLORS.surfaceLight,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  specTagText: {
+    color: COLORS.textSecondary,
+    fontSize: 10,
+    fontWeight: "600",
+  },
   productPrice: {
     fontSize: 15,
     fontWeight: "900",
     color: COLORS.gold,
-    marginTop: 4,
+    marginTop: 6,
   },
   stockRow: {
     flexDirection: "row",
@@ -2497,6 +2991,67 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: 12,
     textDecorationLine: "underline",
+  },
+  // Filter Modal Styles
+  filterModalContainer: {
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    height: "85%",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  filterGroupTitle: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: COLORS.gold,
+    marginTop: 14,
+    marginBottom: 8,
+  },
+  filterOptionGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  filterChoicePill: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  filterChoicePillActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  filterChoiceText: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  filterChoiceTextActive: {
+    color: "#FFF",
+    fontWeight: "bold",
+  },
+  filterResetActionBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  filterApplyActionBtn: {
+    flex: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.primary,
+    paddingVertical: 12,
+    borderRadius: 10,
   },
   // Add / Edit Product Modal
   productFormModalContainer: {
