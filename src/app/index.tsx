@@ -63,6 +63,7 @@ import {
 } from "@/constants/api";
 import { NexoraAiSetupBuilder } from "@/components/NexoraAiSetupBuilder";
 import { NexoraAiChatModal } from "@/components/NexoraAiChatModal";
+import { ProductCompareModal } from "@/components/ProductCompareModal";
 
 const COLORS = {
   primary: "#7C3AED",       // Purple
@@ -238,6 +239,10 @@ export default function GamingStoreScreen() {
   const [aiChatVisible, setAiChatVisible] = useState(false);
   const [aiFocusedProduct, setAiFocusedProduct] = useState<Product | null>(null);
   const [aiInitialPrompt, setAiInitialPrompt] = useState<string>("");
+
+  // Product Comparison State
+  const [compareList, setCompareList] = useState<Product[]>([]);
+  const [compareModalVisible, setCompareModalVisible] = useState(false);
 
   // Load Initial Data
   const loadData = async () => {
@@ -627,6 +632,44 @@ export default function GamingStoreScreen() {
   };
 
   // --------------------------------------------------------------------------
+  // Product Comparison Handlers
+  // --------------------------------------------------------------------------
+  const handleToggleCompare = (product: Product) => {
+    setCompareList((prev) => {
+      const exists = prev.some((p) => String(p.id) === String(product.id));
+      if (exists) {
+        return prev.filter((p) => String(p.id) !== String(product.id));
+      }
+      if (prev.length >= 2) {
+        Alert.alert(
+          "⚖️ เปรียบเทียบได้ครั้งละ 2 ชิ้น",
+          "คุณเลือกสินค้าครบ 2 ชิ้นแล้ว ต้องการแทนที่ชิ้นที่ 2 หรือเปิดดูผลเปรียบเทียบ?",
+          [
+            { text: "ยกเลิก", style: "cancel" },
+            {
+              text: "แทนที่ชิ้นที่ 2",
+              onPress: () => {
+                setCompareList([prev[0], product]);
+                setTimeout(() => setCompareModalVisible(true), 250);
+              },
+            },
+            {
+              text: "ดูผลเปรียบเทียบ",
+              onPress: () => setCompareModalVisible(true),
+            },
+          ]
+        );
+        return prev;
+      }
+      const next = [...prev, product];
+      if (next.length === 2) {
+        setTimeout(() => setCompareModalVisible(true), 350);
+      }
+      return next;
+    });
+  };
+
+  // --------------------------------------------------------------------------
   // Checkout & Order Actions
   // --------------------------------------------------------------------------
   const handleStartCheckout = () => {
@@ -768,9 +811,10 @@ export default function GamingStoreScreen() {
     const isOut = item.stock <= 0;
     const isLow = item.stock > 0 && item.stock <= 3;
     const wish = isWishlisted(item.id);
+    const isComparing = compareList.some((p) => String(p.id) === String(item.id));
 
     return (
-      <View style={styles.productCard}>
+      <View style={[styles.productCard, isComparing && styles.productCardComparing]}>
         {/* Product Showcase Visual with Contain Mode */}
         <View style={styles.productImageContainer}>
           {/* Top Badges & Action Buttons */}
@@ -875,6 +919,31 @@ export default function GamingStoreScreen() {
 
           {/* Action Buttons */}
           <View style={{ marginTop: 10, gap: 6 }}>
+            {/* Compare Toggle Button */}
+            <TouchableOpacity
+              style={[
+                styles.compareCardBtn,
+                isComparing && styles.compareCardBtnActive,
+              ]}
+              onPress={() => handleToggleCompare(item)}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name={isComparing ? "checkbox" : "git-compare-outline"}
+                size={14}
+                color={isComparing ? "#10B981" : "#38BDF8"}
+                style={{ marginRight: 5 }}
+              />
+              <Text
+                style={[
+                  styles.compareCardBtnText,
+                  isComparing && styles.compareCardBtnTextActive,
+                ]}
+              >
+                {isComparing ? "✓ เลือกเปรียบเทียบแล้ว" : "⚖️ Compare (เปรียบเทียบ)"}
+              </Text>
+            </TouchableOpacity>
+
             {/* Ask NEXORA AI Advice Button */}
             <TouchableOpacity
               style={styles.askAiCardBtn}
@@ -1000,6 +1069,28 @@ export default function GamingStoreScreen() {
                 ตัวกรอง {activeFilterCount > 0 ? `(${activeFilterCount})` : ""}
               </Text>
             </TouchableOpacity>
+
+            {/* Quick Compare Trigger Button */}
+            {compareList.length > 0 && (
+              <TouchableOpacity
+                style={styles.topCompareTriggerBtn}
+                onPress={() => {
+                  if (compareList.length === 2) {
+                    setCompareModalVisible(true);
+                  } else {
+                    Alert.alert(
+                      "เปรียบเทียบสินค้า",
+                      `เลือกแล้ว 1 ชิ้น (${compareList[0].name})\nกรุณาคลิก Compare สินค้าอีก 1 ชิ้นเพื่อเริ่มเปรียบเทียบ`
+                    );
+                  }
+                }}
+              >
+                <Ionicons name="git-compare" size={16} color="#38BDF8" />
+                <Text style={styles.topCompareTriggerText}>
+                  เทียบ ({compareList.length}/2)
+                </Text>
+              </TouchableOpacity>
+            )}
 
             {/* + Add Product Button */}
             <TouchableOpacity style={styles.addProductBtn} onPress={openAddProductModal}>
@@ -2169,6 +2260,59 @@ export default function GamingStoreScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
+      {/* FLOATING PRODUCT COMPARE BAR */}
+      {compareList.length > 0 && (
+        <View style={styles.floatingCompareBar}>
+          <View style={styles.floatingCompareInner}>
+            <View style={styles.compareBarLeft}>
+              <View style={styles.compareBarIconBadge}>
+                <Ionicons name="git-compare" size={18} color="#38BDF8" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Text style={styles.compareBarTitle}>
+                    ⚖️ เปรียบเทียบสินค้า ({compareList.length}/2)
+                  </Text>
+                  {compareList.length === 2 && (
+                    <View style={styles.compareReadyBadge}>
+                      <Text style={styles.compareReadyBadgeText}>พร้อมเทียบ</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.compareBarSub} numberOfLines={1}>
+                  {compareList.length === 1
+                    ? `เลือกแล้ว: ${compareList[0].name} (คลิก Compare สินค้าอีก 1 ชิ้น)`
+                    : `${compareList[0].name}  VS  ${compareList[1].name}`}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.compareBarRight}>
+              <TouchableOpacity
+                style={[
+                  styles.compareBarActionBtn,
+                  compareList.length < 2 && styles.compareBarActionBtnDisabled,
+                ]}
+                disabled={compareList.length < 2}
+                onPress={() => setCompareModalVisible(true)}
+              >
+                <Ionicons name="sparkles" size={15} color="#FFF" />
+                <Text style={styles.compareBarActionBtnText}>
+                  {compareList.length === 2 ? "ดูผลเปรียบเทียบ" : "เลือกอีก 1 ชิ้น"}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.compareBarClearBtn}
+                onPress={() => setCompareList([])}
+              >
+                <Ionicons name="close" size={18} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+
       {/* ================================================================== */}
       {/* BOTTOM NAVIGATION TAB BAR */}
       {/* ================================================================== */}
@@ -2274,6 +2418,26 @@ export default function GamingStoreScreen() {
         onAddToCart={addToCart}
         initialProduct={aiFocusedProduct}
         initialPrompt={aiInitialPrompt}
+      />
+
+      {/* PRODUCT COMPARISON MODAL WITH AI */}
+      <ProductCompareModal
+        visible={compareModalVisible}
+        productA={compareList[0] || null}
+        productB={compareList[1] || null}
+        onClose={() => setCompareModalVisible(false)}
+        onAddToCart={(product, quantity) => {
+          addToCart(product, quantity);
+        }}
+        onAskAiInChat={(prompt) => {
+          setAiInitialPrompt(prompt);
+          setAiFocusedProduct(null);
+          setAiChatVisible(true);
+        }}
+        onClearComparison={() => {
+          setCompareList([]);
+          setCompareModalVisible(false);
+        }}
       />
     </SafeAreaView>
   );
@@ -3634,5 +3798,138 @@ const styles = StyleSheet.create({
     color: "#A78BFA",
     fontSize: 9,
     fontWeight: "600",
+  },
+  // Comparison Styles
+  productCardComparing: {
+    borderColor: "#38BDF8",
+    borderWidth: 2,
+    shadowColor: "#38BDF8",
+    shadowOpacity: 0.5,
+  },
+  compareCardBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(56, 189, 248, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(56, 189, 248, 0.35)",
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  compareCardBtnActive: {
+    backgroundColor: "rgba(16, 185, 129, 0.2)",
+    borderColor: "#10B981",
+  },
+  compareCardBtnText: {
+    color: "#38BDF8",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  compareCardBtnTextActive: {
+    color: "#10B981",
+  },
+  topCompareTriggerBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(56, 189, 248, 0.15)",
+    borderWidth: 1,
+    borderColor: "#38BDF8",
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 12,
+  },
+  topCompareTriggerText: {
+    color: "#38BDF8",
+    fontWeight: "bold",
+    fontSize: 12,
+  },
+  floatingCompareBar: {
+    backgroundColor: "#0B132B",
+    borderTopWidth: 1.5,
+    borderTopColor: "#38BDF8",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    width: "100%",
+    shadowColor: "#38BDF8",
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 900,
+  },
+  floatingCompareInner: {
+    maxWidth: 1400,
+    width: "100%",
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  compareBarLeft: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  compareBarIconBadge: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    backgroundColor: "rgba(56, 189, 248, 0.18)",
+    borderWidth: 1,
+    borderColor: "#38BDF8",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  compareBarTitle: {
+    color: "#FFF",
+    fontWeight: "bold",
+    fontSize: 13,
+  },
+  compareReadyBadge: {
+    backgroundColor: "#10B981",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  compareReadyBadgeText: {
+    color: "#FFF",
+    fontSize: 9,
+    fontWeight: "bold",
+  },
+  compareBarSub: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  compareBarRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  compareBarActionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#0284C7",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  compareBarActionBtnDisabled: {
+    backgroundColor: COLORS.surfaceLight,
+    opacity: 0.7,
+  },
+  compareBarActionBtnText: {
+    color: "#FFF",
+    fontWeight: "bold",
+    fontSize: 12,
+  },
+  compareBarClearBtn: {
+    padding: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 8,
   },
 });

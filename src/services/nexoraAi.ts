@@ -221,19 +221,42 @@ export function askNexoraAi(
     };
   }
 
-  // 4. Comparison intent (e.g. "เปรียบเทียบ...")
-  if (query.includes("เปรียบเทียบ") || query.includes("เทียบ") || query.includes("vs") || query.includes("ต่างกันยังไง")) {
-    const reply = `🤖 **NEXORA AI วิเคราะห์การเปรียบเทียบอุปกรณ์:**\n\n` +
-      `📊 **Logitech G Pro X Superlight 2 vs Razer DeathAdder V3 Pro:**\n` +
-      `• **รูปทรง (Shape):** Logitech ทรง Symmetrical (จับได้ทั้งสองมือ/สมดุล) เหมาะกับ Fingertip & Claw grip | Razer ทรง Ergonomic (กระชับมือขวา) เหมาะกับ Palm grip\n` +
-      `• **น้ำหนัก:** Logitech 60g vs Razer 63g (เบาทั้งคู่)\n` +
-      `• **ความคุ้มค่า:** Razer DeathAdder V3 Pro ราคาจับต้องได้ง่ายกว่า (฿2,490) ขณะที่ Logitech โดดเด่นด้านแบตเตอรี่และความเสถียรของสัญญาณ\n\n` +
-      `💡 **สรุป:** หากชอบความสมดุลเลือก Logitech หากชอบเข้าอุ้งมือกระชับเต็มฝ่ามือเลือก Razer ครับ`;
+  // 4. Comparison intent (e.g. "เปรียบเทียบ...", "Logitech G Pro X กับ Razer Viper V3", "vs")
+  if (query.includes("เปรียบเทียบ") || query.includes("เทียบ") || query.includes("vs") || query.includes("ต่างกันยังไง") || (query.includes("กับ") && (query.includes("razer") || query.includes("logitech") || query.includes("viper")))) {
+    // Try to find matching products mentioned in prompt
+    const mentionedProducts = allProducts.filter((p) => {
+      const lower = p.name.toLowerCase();
+      const parts = lower.split(" ");
+      return parts.some((part) => part.length >= 4 && query.includes(part));
+    });
 
-    return {
-      reply,
-      recommendedProducts: allProducts.filter((p) => p.category === "Mouse").slice(0, 2),
-    };
+    let prodA: Product | undefined;
+    let prodB: Product | undefined;
+
+    if (mentionedProducts.length >= 2) {
+      prodA = mentionedProducts[0];
+      prodB = mentionedProducts[1];
+    } else {
+      // Default to the two premier flagship mice: Logitech G Pro X Superlight & Razer Viper / DeathAdder
+      prodA = allProducts.find((p) => p.name.includes("Superlight") || p.name.includes("G Pro")) || allProducts[0];
+      prodB = allProducts.find((p) => p.name.includes("Viper") || p.name.includes("DeathAdder")) || allProducts[1];
+    }
+
+    if (prodA && prodB) {
+      const comp = compareProductsWithAi(prodA, prodB);
+      const reply = `🤖 **${comp.headline}**\n\n` +
+        `⚖️ **บทวิเคราะห์จาก AI:**\n${comp.verdict}\n\n` +
+        `🔹 **จุดเด่น ${comp.productA.name}:**\n` +
+        comp.prosA.map((pr) => `• ${pr}`).join("\n") +
+        `\n\n🔸 **จุดเด่น ${comp.productB.name}:**\n` +
+        comp.prosB.map((pr) => `• ${pr}`).join("\n") +
+        `\n\nกดปุ่มสั่งซื้อหรือใส่ตะกร้าด้านล่างได้ทันทีครับ!`;
+
+      return {
+        reply,
+        recommendedProducts: [comp.productA, comp.productB],
+      };
+    }
   }
 
   // 5. Stock / Price Check
@@ -282,3 +305,170 @@ export function askNexoraAi(
     recommendedProducts: allProducts.filter((p) => p.stock > 0).slice(0, 3),
   };
 }
+
+/**
+ * ============================================================================
+ * AI Product Comparison Engine (Side-by-Side Gear Evaluation)
+ * ============================================================================
+ * Analyzes specs, price-to-performance, weight, DPI, switches, and use-cases
+ * to give clear gamer-centric verdict (FPS vs Battery, Budget vs Pro)
+ */
+export interface AiComparisonResult {
+  productA: Product;
+  productB: Product;
+  headline: string;
+  verdict: string;
+  prosA: string[];
+  prosB: string[];
+  recommendationA: string;
+  recommendationB: string;
+  bestChoiceTagA: string;
+  bestChoiceTagB: string;
+}
+
+export function compareProductsWithAi(
+  productA: Product,
+  productB: Product
+): AiComparisonResult {
+  const isBothMouse = productA.category === "Mouse" && productB.category === "Mouse";
+  const isBothKeyboard = productA.category === "Keyboard" && productB.category === "Keyboard";
+  const isBothHeadset = productA.category === "Headset" && productB.category === "Headset";
+  const isBothMonitor = productA.category === "Monitor" && productB.category === "Monitor";
+
+  const getWeight = (p: Product): number | null => {
+    const text = `${p.size || ""} ${p.description || ""}`;
+    const m = text.match(/(\d+)\s*g\b/i);
+    return m ? parseInt(m[1], 10) : null;
+  };
+
+  const weightA = getWeight(productA);
+  const weightB = getWeight(productB);
+
+  const dpiA = productA.dpi || 0;
+  const dpiB = productB.dpi || 0;
+
+  let headline = `🤖 NEXORA AI วิเคราะห์เปรียบเทียบ: ${productA.name} vs ${productB.name}`;
+  let verdict = "";
+  const prosA: string[] = [];
+  const prosB: string[] = [];
+  let recommendationA = "";
+  let recommendationB = "";
+  let bestChoiceTagA = "ตัวเลือกที่ 1";
+  let bestChoiceTagB = "ตัวเลือกที่ 2";
+
+  // 1. Mouse comparison logic
+  if (isBothMouse) {
+    if (weightA && weightB) {
+      if (weightA < weightB) {
+        prosA.push(`น้ำหนักเบากว่า (${weightA}g vs ${weightB}g) สะบัดเมาส์ได้พริ้วไหว`);
+        prosB.push(`น้ำหนัก ${weightB}g ให้ความรู้สึกมั่นคง นิ่งในจังหวะ Tracking`);
+      } else if (weightB < weightA) {
+        prosB.push(`น้ำหนักเบากว่า (${weightB}g vs ${weightA}g) สะบัดเมาส์ได้พริ้วไหว`);
+        prosA.push(`น้ำหนัก ${weightA}g ให้ความรู้สึกมั่นคง นิ่งในจังหวะ Tracking`);
+      }
+    }
+
+    if (dpiA && dpiB) {
+      if (dpiA > dpiB) {
+        prosA.push(`DPI สูงกว่า (${dpiA.toLocaleString()} DPI) เซนเซอร์ระดับไฮเอนด์`);
+      } else if (dpiB > dpiA) {
+        prosB.push(`DPI สูงกว่า (${dpiB.toLocaleString()} DPI) เซนเซอร์ระดับไฮเอนด์`);
+      }
+    }
+
+    if (productA.price < productB.price) {
+      prosA.push(`ราคาประหยัดกว่า คุ้มค่างบประมาณ (ต่างกัน ฿${(productB.price - productA.price).toLocaleString()})`);
+    } else if (productB.price < productA.price) {
+      prosB.push(`ราคาประหยัดกว่า คุ้มค่างบประมาณ (ต่างกัน ฿${(productA.price - productB.price).toLocaleString()})`);
+    }
+
+    if (productA.name.toLowerCase().includes("logitech") || productB.name.toLowerCase().includes("logitech")) {
+      const logi = productA.name.toLowerCase().includes("logitech") ? "A" : "B";
+      if (logi === "A") prosA.push("ขึ้นชื่อเรื่องความเสถียรของสัญญาณ LIGHTSPEED และอายุการใช้งานแบตเตอรี่ที่ยาวนาน");
+      else prosB.push("ขึ้นชื่อเรื่องความเสถียรของสัญญาณ LIGHTSPEED และอายุการใช้งานแบตเตอรี่ที่ยาวนาน");
+    }
+
+    if (productA.name.toLowerCase().includes("razer") || productB.name.toLowerCase().includes("razer")) {
+      const rz = productA.name.toLowerCase().includes("razer") ? "A" : "B";
+      if (rz === "A") prosA.push("เทคโนโลยีเซนเซอร์ Focus Pro และ Optical Switch ตอบสนองระดับเสี้ยววินาที");
+      else prosB.push("เทคโนโลยีเซนเซอร์ Focus Pro และ Optical Switch ตอบสนองระดับเสี้ยววินาที");
+    }
+
+    // Tailored verdict exact phrasing as requested:
+    const lighter = weightA && weightB ? (weightA < weightB ? productA : productB) : (dpiA > dpiB ? productA : productB);
+    const heavier = lighter.id === productA.id ? productB : productA;
+
+    verdict = `ถ้าเน้นเล่นเกม FPS ผมแนะนำ **${lighter.name}** เพราะน้ำหนักเบากว่า${lighter.dpi ? ` และมี DPI สูงถึง ${lighter.dpi.toLocaleString()} DPI` : ""} ช่วยในการสะบัดและหยุดเป้าได้อย่างแม่นยำ\n\nแต่ถ้าต้องการแบตเตอรี่ที่ใช้งานได้นานกว่าและความเสถียรสูงสุด หรือคุ้มค่างบประมาณ แนะนำ **${heavier.name}**`;
+
+    bestChoiceTagA = weightA && weightB && weightA < weightB ? "⚡ เหมาะกับสาย FPS / Flick" : "🔋 อเนกประสงค์ & เสถียรสูง";
+    bestChoiceTagB = weightB && weightA && weightB < weightA ? "⚡ เหมาะกับสาย FPS / Flick" : "🔋 อเนกประสงค์ & เสถียรสูง";
+    recommendationA = `เหมาะกับผู้เล่นที่เน้น ${productA.category} ประสิทธิภาพสูง คล่องตัว`;
+    recommendationB = `เหมาะกับผู้เล่นที่ต้องการ ${productB.category} ทนทาน เสถียร และแบตอึด`;
+  }
+  // 2. Keyboard comparison
+  else if (isBothKeyboard) {
+    if (productA.price < productB.price) {
+      prosA.push(`ราคาจับต้องง่ายกว่า ประหยัดเงิน ฿${(productB.price - productA.price).toLocaleString()}`);
+    } else if (productB.price < productA.price) {
+      prosB.push(`ราคาจับต้องง่ายกว่า ประหยัดเงิน ฿${(productA.price - productB.price).toLocaleString()}`);
+    }
+
+    prosA.push(`เลย์เอาต์ ${productA.size || "มาตรฐาน"} ตอบโจทย์การใช้งานเฉพาะทาง`);
+    prosB.push(`เลย์เอาต์ ${productB.size || "มาตรฐาน"} ตอบโจทย์การใช้งานเฉพาะทาง`);
+
+    verdict = `ถ้าเน้นพื้นที่โต๊ะคอมกว้างขวางเพื่อสะบัดเมาส์ในการแข่งขัน แนะนำตัวที่มีขนาดกะทัดรัดอย่าง **${(productA.size?.includes("60%") || productA.size?.includes("TKL")) ? productA.name : productB.name}**\n\nแต่ถ้าต้องพิมพ์งานหรือใช้คีย์ตัวเลข (Numpad) ร่วมด้วย แนะนำ **${(productA.size?.includes("Full") || !productA.size?.includes("60%")) ? productA.name : productB.name}** ครับ`;
+
+    bestChoiceTagA = "🎮 ตอบสนองไว";
+    bestChoiceTagB = "💼 คุ้มค่า ครบเครื่อง";
+    recommendationA = `คีย์บอร์ดเกรดพรีเมียมจาก ${productA.brand}`;
+    recommendationB = `คีย์บอร์ดเกรดพรีเมียมจาก ${productB.brand}`;
+  }
+  // 3. Headset comparison
+  else if (isBothHeadset) {
+    prosA.push(`คุณภาพเสียงและไมโครโฟนเอกลักษณ์ของแบรนด์ ${productA.brand}`);
+    prosB.push(`คุณภาพเสียงและไมโครโฟนเอกลักษณ์ของแบรนด์ ${productB.brand}`);
+
+    verdict = `สำหรับการเล่นเกมแนว Tactical Shooter ที่ต้องฟังเสียงฝีเท้า แนะนำเลือกรุ่นที่มีน้ำหนักเบาและโฟมนุ่มสบายอย่าง **${productA.rating >= productB.rating ? productA.name : productB.name}** (เรตติ้ง ⭐ ${Math.max(productA.rating, productB.rating)})\n\nส่วน **${productA.rating < productB.rating ? productA.name : productB.name}** โดดเด่นด้านการตัดเสียงรบกวนและความคุ้มค่าครับ`;
+
+    bestChoiceTagA = "🎧 เสียงคมชัด";
+    bestChoiceTagB = "🔊 ฟังสบายตลอดวัน";
+    recommendationA = `หูฟังระดับท็อปจาก ${productA.brand}`;
+    recommendationB = `หูฟังระดับท็อปจาก ${productB.brand}`;
+  }
+  // 4. General / Cross-Category comparison
+  else {
+    if (productA.price < productB.price) {
+      prosA.push(`ประหยัดงบกว่า ฿${(productB.price - productA.price).toLocaleString()}`);
+    } else {
+      prosB.push(`ประหยัดงบกว่า ฿${(productA.price - productB.price).toLocaleString()}`);
+    }
+
+    prosA.push(`คะแนนรีวิว ⭐ ${productA.rating}/5.0 จากผู้ใช้งานจริง`);
+    prosB.push(`คะแนนรีวิว ⭐ ${productB.rating}/5.0 จากผู้ใช้งานจริง`);
+
+    verdict = `จากการวิเคราะห์สเปกและความคุ้มค่า:\n• **${productA.name}** โดดเด่นในหมวด ${productA.category} ด้วยมาตรฐานแบรนด์ ${productA.brand}\n• **${productB.name}** โดดเด่นในหมวด ${productB.category} ด้วยมาตรฐานแบรนด์ ${productB.brand}\n\nคุณสามารถเลือกตามงบประมาณและความต้องการใช้งานได้เลยครับ`;
+
+    bestChoiceTagA = "⭐ ตัวเลือกยอดนิยม";
+    bestChoiceTagB = "⭐ ตัวเลือกยอดนิยม";
+    recommendationA = `สินค้าคุณภาพจาก ${productA.brand}`;
+    recommendationB = `สินค้าคุณภาพจาก ${productB.brand}`;
+  }
+
+  // Fallback pros if empty
+  if (prosA.length === 0) prosA.push(`คะแนนรีวิวสูง ⭐ ${productA.rating}`, `การเชื่อมต่อแบบ ${productA.connection}`);
+  if (prosB.length === 0) prosB.push(`คะแนนรีวิวสูง ⭐ ${productB.rating}`, `การเชื่อมต่อแบบ ${productB.connection}`);
+
+  return {
+    productA,
+    productB,
+    headline,
+    verdict,
+    prosA,
+    prosB,
+    recommendationA,
+    recommendationB,
+    bestChoiceTagA,
+    bestChoiceTagB,
+  };
+}
+
