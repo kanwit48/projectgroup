@@ -102,6 +102,15 @@ const BRANDS = [
   "LG",
   "MEZZON",
   "AOC",
+  "Corsair",
+  "Wooting",
+  "Keychron",
+  "Samsung",
+  "Alienware",
+  "Pulsar",
+  "Artisan",
+  "Ducky",
+  "MSI",
 ];
 
 const PRICE_RANGES = [
