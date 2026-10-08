@@ -105,8 +105,8 @@ export default function LoginScreen() {
               source={{ uri: DEFAULT_PRODUCT_IMAGE }}
               style={styles.brandLogo}
             />
-            <Text style={styles.brandTitle}>Adidas Shop</Text>
-            <Text style={styles.brandSubtitle}>ระบบจัดการร้านค้าและคลังสินค้า</Text>
+            <Text style={styles.brandTitle}>mono Gaming</Text>
+            <Text style={styles.brandSubtitle}>High-Performance Gear & Gaming Store</Text>
           </View>
 
           {/* 2. การ์ดฟอร์มเข้าสู่ระบบ */}

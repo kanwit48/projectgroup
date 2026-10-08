@@ -97,7 +97,7 @@ export default function SignUpScreen() {
           alert(`สมัครสมาชิกสำเร็จ! ยินดีต้อนรับคุณ ${result.user?.name || username}!`);
           router.replace('/' as any);
         } else {
-          Alert.alert('สมัครสมาชิกสำเร็จ!', `ยินดีต้อนรับสู่ Adidas Shop, คุณ ${result.user?.name || username}!`, [
+          Alert.alert('สมัครสมาชิกสำเร็จ!', `ยินดีต้อนรับสู่ mono Gaming, คุณ ${result.user?.name || username}!`, [
             { text: 'เริ่มใช้งาน', onPress: () => router.replace('/' as any) },
           ]);
         }
@@ -127,7 +127,7 @@ export default function SignUpScreen() {
               source={{ uri: DEFAULT_PRODUCT_IMAGE }}
               style={styles.brandLogo}
             />
-            <Text style={styles.brandTitle}>Adidas Shop</Text>
+            <Text style={styles.brandTitle}>mono Gaming</Text>
             <Text style={styles.brandSubtitle}>สร้างบัญชีใหม่เพื่อเริ่มต้นใช้งาน</Text>
           </View>
 

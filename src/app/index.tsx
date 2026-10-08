@@ -867,7 +867,7 @@ export default function GamingStoreScreen() {
       {/* TOP APP BAR */}
       <View style={styles.topBar}>
         <View>
-          <Text style={styles.brandTitle}>⚡ NEXUS GAMING</Text>
+          <Text style={styles.brandTitle}>⚡ mono Gaming</Text>
           <Text style={styles.brandSubtitle}>High-Performance Gear & Custom Sets</Text>
         </View>
 
@@ -2035,7 +2035,7 @@ export default function GamingStoreScreen() {
                 <View style={styles.slipUploadContainer}>
                   <Text style={styles.inputLabel}>แนบสลิปการโอนเงิน (Upload Slip) *</Text>
                   <Text style={styles.slipBankInfo}>
-                    ธนาคารกสิกรไทย: 123-4-56789-0 (Nexus Gaming Co., Ltd.)
+                    ธนาคารกสิกรไทย: 123-4-56789-0 (mono Gaming Co., Ltd.)
                   </Text>
                   <TouchableOpacity style={styles.uploadSlipBtn} onPress={handleSimulateUploadSlip}>
                     <Ionicons name="cloud-upload-outline" size={22} color="#FFF" style={{ marginRight: 8 }} />

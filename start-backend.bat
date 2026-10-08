@@ -1,5 +1,5 @@
 @echo off
-title Nexus Gaming - Backend Server
+title mono Gaming - Backend Server
 echo ====================================================
 echo Starting Backend Server on port 3103 ...
 echo ====================================================

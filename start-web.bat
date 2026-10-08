@@ -1,5 +1,5 @@
 @echo off
-title Nexus Gaming - Web Frontend
+title mono Gaming - Web Frontend
 echo ====================================================
 echo Starting Web Frontend on http://localhost:8081 ...
 echo ====================================================
