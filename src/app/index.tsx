@@ -6,13 +6,12 @@
  * 1. 🛒 Cart System (+ / - quantity, remove, total calculation, stock check, Cart badge)
  * 2. 💳 Checkout System (Name, Phone, Address, Province, Zip, Bank/PromptPay/COD, Slip Upload)
  * 3. 📦 Order System (Order #ORD-..., Items, Total, Status workflow)
- * 4. 👨‍💼 Admin Dashboard (Total Sales, Orders, Products, Low Stock, Daily Sales Bar Chart, Category Breakdown)
- * 5. ❤️ Wishlist System (♡ / ♥ toggle, My Wishlist page, Add to Cart)
- * 6. 📦 Stock System (Stock count, ⚠️ Only X left, ❌ Out of Stock, disable button)
- * 7. 🏷️ Categories (All Products, ⌨️ Keyboard, 🖱️ Mouse, 🎧 Headset, 🖥️ Monitor)
- * 8. 🎮 Gaming Sets: ร้านจัดให้ (Bundles) & ลูกค้าจัดเอง (Custom Builder)
- * 9. ➕✏️🗑️ Product Management: Add, Edit, Delete Product with Modal & Cloud DB
- * 10. 🔐 Authentication System: Sign In, Sign Up, Guest Login, Logout, Demo Accounts
+ * 4. ❤️ Wishlist System (♡ / ♥ toggle, My Wishlist page, Add to Cart)
+ * 5. 📦 Stock System (Stock count, ⚠️ Only X left, ❌ Out of Stock, disable button)
+ * 6. 🏷️ Categories (All Products, ⌨️ Keyboard, 🖱️ Mouse, 🎧 Headset, 🖥️ Monitor)
+ * 7. 🎮 Gaming Sets: ร้านจัดให้ (Bundles) & ลูกค้าจัดเอง (Custom Builder)
+ * 8. ➕✏️🗑️ Product Management: Add, Edit, Delete Product with Modal & Cloud DB
+ * 9. 🔐 Authentication System: Sign In, Sign Up, Guest Login, Logout, Demo Accounts
  * ============================================================================
  */
 
@@ -76,8 +75,6 @@ const COLORS = {
   badgeLow: "#F59E0B",      // Amber
   badgeOut: "#EF4444",      // Red
   gold: "#FBBF24",
-  cyan: "#06B6D4",
-  blue: "#3B82F6",
 };
 
 const CATEGORIES = [
@@ -89,8 +86,8 @@ const CATEGORIES = [
 ];
 
 export default function GamingStoreScreen() {
-  // Navigation Tabs: 'catalog' | 'sets' | 'wishlist' | 'orders' | 'dashboard' | 'account'
-  const [activeTab, setActiveTab] = useState<"catalog" | "sets" | "wishlist" | "orders" | "dashboard" | "account">("catalog");
+  // Navigation Tabs: 'catalog' | 'sets' | 'wishlist' | 'orders' | 'account'
+  const [activeTab, setActiveTab] = useState<"catalog" | "sets" | "wishlist" | "orders" | "account">("catalog");
 
   // Catalog State
   const [products, setProducts] = useState<Product[]>([]);
@@ -174,50 +171,6 @@ export default function GamingStoreScreen() {
   };
 
   // --------------------------------------------------------------------------
-  // Dashboard Analytics Calculations
-  // --------------------------------------------------------------------------
-  const dashboardStats = useMemo(() => {
-    const calculatedSales = orders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0) + 118970;
-    const totalOrdersCount = orders.length + 47;
-    const totalProductsCount = products.length;
-    const lowStockProducts = products.filter((p) => p.stock <= 3);
-
-    return {
-      totalSales: calculatedSales,
-      totalOrders: totalOrdersCount,
-      totalProducts: totalProductsCount,
-      lowStockCount: lowStockProducts.length,
-      lowStockList: lowStockProducts,
-    };
-  }, [orders, products]);
-
-  // Daily Sales Data for Bar Chart
-  const dailySalesData = [
-    { day: "Mon", amount: 18450, percentage: 65 },
-    { day: "Tue", amount: 24900, percentage: 88 },
-    { day: "Wed", amount: 14200, percentage: 50 },
-    { day: "Thu", amount: 32600, percentage: 100 },
-    { day: "Fri", amount: 21800, percentage: 76 },
-    { day: "Sat", amount: 28500, percentage: 92 },
-    { day: "Sun", amount: 19900, percentage: 68 },
-  ];
-
-  // Category Breakdown
-  const categoryStats = [
-    { category: "⌨️ Keyboard", sales: 44250, share: "35%", color: COLORS.primary },
-    { category: "🖱️ Mouse", sales: 35120, share: "28%", color: COLORS.cyan },
-    { category: "🎧 Headset", sales: 27600, share: "22%", color: COLORS.accent },
-    { category: "🖥️ Monitor", sales: 18480, share: "15%", color: COLORS.gold },
-  ];
-
-  const handleRestockProduct = async (product: Product, amountToAdd = 10) => {
-    const newStock = product.stock + amountToAdd;
-    await updateProductApi(product.id, { stock: newStock });
-    await loadData();
-    Alert.alert("เติมสต็อกสำเร็จ", `เพิ่มสต็อก ${product.name} อีก ${amountToAdd} ชิ้น (รวมเป็น ${newStock} ชิ้น)`);
-  };
-
-  // --------------------------------------------------------------------------
   // Auth Handlers (Login / Signup / Guest / Logout)
   // --------------------------------------------------------------------------
   const handleLogin = async () => {
@@ -232,9 +185,6 @@ export default function GamingStoreScreen() {
         setCurrentUser(res.user);
         setAuthModalVisible(false);
         Alert.alert("สำเร็จ", `ยินดีต้อนรับคุณ ${res.user.name} (${res.user.role})`);
-        if (res.user.role === "admin") {
-          setActiveTab("dashboard");
-        }
       }
     } catch (e: any) {
       Alert.alert("เข้าสู่ระบบไม่สำเร็จ", e.message || "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
@@ -721,19 +671,6 @@ export default function GamingStoreScreen() {
         </View>
 
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          {/* Quick Dashboard Shortcut for Admin */}
-          {currentUser?.role === "admin" && (
-            <TouchableOpacity
-              style={[styles.topDashboardBtn, activeTab === "dashboard" && styles.topDashboardBtnActive]}
-              onPress={() => setActiveTab(activeTab === "dashboard" ? "catalog" : "dashboard")}
-            >
-              <Ionicons name="bar-chart" size={16} color="#FFF" />
-              <Text style={styles.topDashboardBtnText}>
-                {activeTab === "dashboard" ? "ร้านค้า" : "Dashboard"}
-              </Text>
-            </TouchableOpacity>
-          )}
-
           {/* Top User Status Pill / Login Button */}
           {currentUser ? (
             <TouchableOpacity
@@ -773,183 +710,6 @@ export default function GamingStoreScreen() {
           </TouchableOpacity>
         </View>
       </View>
-
-      {/* ================================================================== */}
-      {/* 👨‍💼 TAB: ADMIN DASHBOARD */}
-      {/* ================================================================== */}
-      {activeTab === "dashboard" && (
-        <ScrollView style={{ flex: 1, paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
-          <View style={styles.screenHeader}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <View>
-                <Text style={styles.screenTitle}>👨‍💼 Admin Dashboard</Text>
-                <Text style={styles.screenSubtitle}>การวิเคราะห์ข้อมูลยอดขายและคลังสินค้า (Real-Time Analytics)</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.dashRefreshBtn}
-                onPress={onRefresh}
-              >
-                <Ionicons name="refresh" size={18} color={COLORS.primaryLight} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* 4 KPI METRIC CARDS */}
-          <View style={styles.metricGrid}>
-            {/* 1. Total Sales */}
-            <View style={[styles.metricCard, { borderColor: COLORS.gold }]}>
-              <View style={styles.metricHeader}>
-                <Text style={styles.metricLabel}>Total Sales</Text>
-                <Ionicons name="cash-outline" size={20} color={COLORS.gold} />
-              </View>
-              <Text style={[styles.metricValue, { color: COLORS.gold }]}>
-                ฿{dashboardStats.totalSales.toLocaleString()}
-              </Text>
-              <Text style={styles.metricSubtext}>+12.5% เทียบกับสัปดาห์ก่อน</Text>
-            </View>
-
-            {/* 2. Total Orders */}
-            <View style={[styles.metricCard, { borderColor: COLORS.cyan }]}>
-              <View style={styles.metricHeader}>
-                <Text style={styles.metricLabel}>Orders</Text>
-                <Ionicons name="receipt-outline" size={20} color={COLORS.cyan} />
-              </View>
-              <Text style={[styles.metricValue, { color: COLORS.cyan }]}>
-                {dashboardStats.totalOrders}
-              </Text>
-              <Text style={styles.metricSubtext}>สำเร็จแล้ว 96%</Text>
-            </View>
-
-            {/* 3. Total Products */}
-            <View style={[styles.metricCard, { borderColor: COLORS.primary }]}>
-              <View style={styles.metricHeader}>
-                <Text style={styles.metricLabel}>Products</Text>
-                <Ionicons name="cube-outline" size={20} color={COLORS.primary} />
-              </View>
-              <Text style={[styles.metricValue, { color: COLORS.primaryLight }]}>
-                {dashboardStats.totalProducts}
-              </Text>
-              <Text style={styles.metricSubtext}>4 หมวดหมู่อุปกรณ์</Text>
-            </View>
-
-            {/* 4. Low Stock */}
-            <View style={[styles.metricCard, { borderColor: COLORS.badgeLow }]}>
-              <View style={styles.metricHeader}>
-                <Text style={styles.metricLabel}>Low Stock</Text>
-                <Ionicons name="warning-outline" size={20} color={COLORS.badgeLow} />
-              </View>
-              <Text style={[styles.metricValue, { color: COLORS.badgeLow }]}>
-                {dashboardStats.lowStockCount}
-              </Text>
-              <Text style={styles.metricSubtext}>สินค้าเหลือน้อย/หมดสต็อก</Text>
-            </View>
-          </View>
-
-          {/* DAILY SALES BAR CHART */}
-          <View style={styles.dashSectionCard}>
-            <View style={styles.dashSectionHeader}>
-              <Ionicons name="stats-chart" size={18} color={COLORS.primary} style={{ marginRight: 8 }} />
-              <Text style={styles.dashSectionTitle}>ยอดขายรายวัน (Daily Sales)</Text>
-            </View>
-            <Text style={styles.dashSectionSubtitle}>สถิติยอดจำหน่ายตลอด 7 วันที่ผ่านมา</Text>
-
-            <View style={styles.chartContainer}>
-              {dailySalesData.map((item) => (
-                <View key={item.day} style={styles.chartRow}>
-                  <Text style={styles.chartDayText}>{item.day}</Text>
-                  <View style={styles.chartBarTrack}>
-                    <View style={[styles.chartBarFill, { width: `${item.percentage}%` }]} />
-                  </View>
-                  <Text style={styles.chartAmountText}>฿{item.amount.toLocaleString()}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {/* SALES BY CATEGORY BREAKDOWN */}
-          <View style={styles.dashSectionCard}>
-            <View style={styles.dashSectionHeader}>
-              <Ionicons name="pie-chart" size={18} color={COLORS.cyan} style={{ marginRight: 8 }} />
-              <Text style={styles.dashSectionTitle}>สัดส่วนยอดขายตามหมวดหมู่ (Category Share)</Text>
-            </View>
-
-            <View style={{ marginTop: 12, gap: 10 }}>
-              {categoryStats.map((cat) => (
-                <View key={cat.category}>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-                    <Text style={{ color: "#FFF", fontSize: 13, fontWeight: "600" }}>{cat.category}</Text>
-                    <Text style={{ color: COLORS.textSecondary, fontSize: 12 }}>
-                      ฿{cat.sales.toLocaleString()} ({cat.share})
-                    </Text>
-                  </View>
-                  <View style={styles.categoryTrack}>
-                    <View style={[styles.categoryFill, { width: cat.share, backgroundColor: cat.color }]} />
-                  </View>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {/* LOW STOCK ALERT TABLE WITH QUICK RESTOCK */}
-          <View style={styles.dashSectionCard}>
-            <View style={styles.dashSectionHeader}>
-              <Ionicons name="alert-circle" size={18} color={COLORS.badgeLow} style={{ marginRight: 8 }} />
-              <Text style={styles.dashSectionTitle}>
-                รายการสินค้าต้องสั่งเติมสต็อก (Low Stock Alert: {dashboardStats.lowStockList.length})
-              </Text>
-            </View>
-            <Text style={styles.dashSectionSubtitle}>สินค้าที่สต็อกเหลือน้อยกว่าหรือเท่ากับ 3 ชิ้น</Text>
-
-            <View style={{ marginTop: 12 }}>
-              {dashboardStats.lowStockList.map((prod) => (
-                <View key={prod.id} style={styles.lowStockRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.lowStockProdName} numberOfLines={1}>
-                      {prod.name}
-                    </Text>
-                    <Text style={styles.lowStockCategory}>
-                      หมวด: {prod.category} | ราคา: ฿{prod.price.toLocaleString()}
-                    </Text>
-                  </View>
-
-                  <View style={{ alignItems: "flex-end", marginRight: 10 }}>
-                    <Text style={[styles.lowStockCountText, prod.stock === 0 ? { color: COLORS.badgeOut } : { color: COLORS.badgeLow }]}>
-                      {prod.stock === 0 ? "หมดสต็อก (0)" : `เหลือ ${prod.stock} ชิ้น`}
-                    </Text>
-                  </View>
-
-                  <TouchableOpacity
-                    style={styles.restockBtn}
-                    onPress={() => handleRestockProduct(prod, 10)}
-                  >
-                    <Ionicons name="add" size={16} color="#FFF" />
-                    <Text style={styles.restockBtnText}>+10</Text>
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {/* QUICK SHORTCUTS */}
-          <View style={{ flexDirection: "row", gap: 10, marginVertical: 20 }}>
-            <TouchableOpacity
-              style={styles.dashQuickActionBtn}
-              onPress={openAddProductModal}
-            >
-              <Ionicons name="add-circle-outline" size={20} color="#FFF" style={{ marginRight: 6 }} />
-              <Text style={{ color: "#FFF", fontWeight: "bold" }}>เพิ่มสินค้าใหม่</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.dashQuickActionBtn, { backgroundColor: COLORS.surfaceLight }]}
-              onPress={() => setActiveTab("orders")}
-            >
-              <Ionicons name="receipt-outline" size={20} color="#FFF" style={{ marginRight: 6 }} />
-              <Text style={{ color: "#FFF", fontWeight: "bold" }}>ดูคำสั่งซื้อทั้งหมด</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      )}
 
       {/* TAB: CATALOG */}
       {activeTab === "catalog" && (
@@ -1340,15 +1100,6 @@ export default function GamingStoreScreen() {
 
             {currentUser ? (
               <View style={{ width: "100%", gap: 10, marginTop: 20 }}>
-                {/* Admin Dashboard Button in Profile */}
-                <TouchableOpacity
-                  style={[styles.quickAddProductBtn, { backgroundColor: COLORS.gold }]}
-                  onPress={() => setActiveTab("dashboard")}
-                >
-                  <Ionicons name="bar-chart" size={20} color="#0F172A" style={{ marginRight: 8 }} />
-                  <Text style={{ color: "#0F172A", fontWeight: "bold" }}>📊 เปิดหน้า Admin Dashboard</Text>
-                </TouchableOpacity>
-
                 <TouchableOpacity
                   style={styles.quickAddProductBtn}
                   onPress={() => {
@@ -1927,21 +1678,6 @@ export default function GamingStoreScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* Dashboard Tab for Admin or Quick Analytics */}
-        <TouchableOpacity
-          style={styles.navTab}
-          onPress={() => setActiveTab("dashboard")}
-        >
-          <Ionicons
-            name={activeTab === "dashboard" ? "bar-chart" : "bar-chart-outline"}
-            size={22}
-            color={activeTab === "dashboard" ? COLORS.gold : COLORS.textSecondary}
-          />
-          <Text style={[styles.navLabel, activeTab === "dashboard" && { color: COLORS.gold, fontWeight: "bold" }]}>
-            Dashboard
-          </Text>
-        </TouchableOpacity>
-
         <TouchableOpacity
           style={styles.navTab}
           onPress={() => setActiveTab("sets")}
@@ -2035,25 +1771,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: COLORS.textSecondary,
     marginTop: 2,
-  },
-  topDashboardBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(251, 191, 36, 0.2)",
-    borderWidth: 1,
-    borderColor: COLORS.gold,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
-  },
-  topDashboardBtnActive: {
-    backgroundColor: COLORS.gold,
-  },
-  topDashboardBtnText: {
-    color: "#FFF",
-    fontSize: 12,
-    fontWeight: "bold",
   },
   userStatusPill: {
     flexDirection: "row",
@@ -2475,156 +2192,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.textSecondary,
     marginTop: 2,
-  },
-  dashRefreshBtn: {
-    backgroundColor: COLORS.surfaceLight,
-    padding: 8,
-    borderRadius: 8,
-  },
-  // Dashboard Styles
-  metricGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: 12,
-    marginBottom: 16,
-  },
-  metricCard: {
-    width: "48%",
-    backgroundColor: COLORS.surface,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  metricHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  metricLabel: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: COLORS.textSecondary,
-  },
-  metricValue: {
-    fontSize: 22,
-    fontWeight: "900",
-    marginVertical: 4,
-  },
-  metricSubtext: {
-    fontSize: 10,
-    color: COLORS.textSecondary,
-  },
-  dashSectionCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  dashSectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  dashSectionTitle: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: "#FFF",
-  },
-  dashSectionSubtitle: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  chartContainer: {
-    marginTop: 14,
-    gap: 8,
-  },
-  chartRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  chartDayText: {
-    width: 38,
-    color: COLORS.textSecondary,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  chartBarTrack: {
-    flex: 1,
-    height: 18,
-    backgroundColor: COLORS.surfaceLight,
-    borderRadius: 6,
-    overflow: "hidden",
-    marginHorizontal: 8,
-  },
-  chartBarFill: {
-    height: "100%",
-    backgroundColor: COLORS.primary,
-    borderRadius: 6,
-  },
-  chartAmountText: {
-    width: 70,
-    textAlign: "right",
-    color: COLORS.gold,
-    fontSize: 11,
-    fontWeight: "bold",
-  },
-  categoryTrack: {
-    height: 8,
-    backgroundColor: COLORS.surfaceLight,
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-  categoryFill: {
-    height: "100%",
-    borderRadius: 4,
-  },
-  lowStockRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderColor: COLORS.border,
-  },
-  lowStockProdName: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: "#FFF",
-  },
-  lowStockCategory: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  lowStockCountText: {
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  restockBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.badgeInStock,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    gap: 2,
-  },
-  restockBtnText: {
-    color: "#FFF",
-    fontWeight: "bold",
-    fontSize: 12,
-  },
-  dashQuickActionBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.primary,
-    paddingVertical: 12,
-    borderRadius: 12,
   },
   // Wishlist
   wishlistItemCard: {
