@@ -177,6 +177,17 @@ async function initDB() {
   }
 }
 
+// Helper to use group_ table if available, fallback to individual table
+async function getTableName(tableName) {
+  if (!dbPool) return tableName;
+  try {
+    const groupName = `group_${tableName}`;
+    const [rows] = await dbPool.query(`SHOW TABLES LIKE ?`, [groupName]);
+    if (rows && rows.length > 0) return groupName;
+  } catch (e) {}
+  return tableName;
+}
+
 // ----------------------------------------------------------------------------
 // 1. Health Check
 // ----------------------------------------------------------------------------
@@ -224,8 +235,9 @@ app.post('/api/auth/login', async (req, res) => {
     }
     if (!dbPool) return res.status(500).json({ error: 'Database not connected' });
 
+    const usersTable = await getTableName('users');
     const [rows] = await dbPool.query(
-      'SELECT id, username, name, role, is_guest FROM users WHERE username = ? AND password = ?',
+      `SELECT id, username, name, role, is_guest FROM ${usersTable} WHERE username = ? AND password = ?`,
       [username.trim(), password]
     );
 
@@ -254,7 +266,8 @@ app.get('/api/products', async (req, res) => {
     const { search, q, category } = req.query;
     const filterText = (search || q || '').trim();
 
-    let sql = 'SELECT * FROM products WHERE 1=1';
+    const productsTable = await getTableName('products');
+    let sql = `SELECT * FROM ${productsTable} WHERE 1=1`;
     const params = [];
 
     if (filterText) {
@@ -301,9 +314,10 @@ app.post('/api/products', async (req, res) => {
       location_text = 'Bangkok Store', image_url, description = ''
     } = req.body || {};
 
+    const productsTable = await getTableName('products');
     const badge = Number(stock) === 0 ? 'Out of Stock' : (Number(stock) <= 3 ? 'Low in stock' : 'In Stock');
     const [rs] = await dbPool.query(
-      `INSERT INTO products (name, price, stock, stock_text, category, location_count, location_text, badge_status, rating, image_url, description)
+      `INSERT INTO ${productsTable} (name, price, stock, stock_text, category, location_count, location_text, badge_status, rating, image_url, description)
        VALUES (?, ?, ?, ?, ?, 1, ?, ?, 5.0, ?, ?)`,
       [name, Number(price), Number(stock), `${stock} in stock`, category, location_text, badge, image_url, description]
     );
@@ -321,7 +335,8 @@ app.put('/api/products/:id', async (req, res) => {
     const { id } = req.params;
     const { name, price, stock, category, image_url, description } = req.body || {};
 
-    const [existing] = await dbPool.query('SELECT * FROM products WHERE id = ?', [id]);
+    const productsTable = await getTableName('products');
+    const [existing] = await dbPool.query(`SELECT * FROM ${productsTable} WHERE id = ?`, [id]);
     if (existing.length === 0) return res.status(404).json({ error: 'Product not found' });
     const curr = existing[0];
 
@@ -329,7 +344,7 @@ app.put('/api/products/:id', async (req, res) => {
     const badge = newStock === 0 ? 'Out of Stock' : (newStock <= 3 ? 'Low in stock' : 'In Stock');
 
     await dbPool.query(
-      `UPDATE products 
+      `UPDATE ${productsTable} 
        SET name = ?, price = ?, stock = ?, stock_text = ?, category = ?, badge_status = ?, image_url = ?, description = ?
        WHERE id = ?`,
       [
@@ -356,7 +371,8 @@ app.delete('/api/products/:id', async (req, res) => {
   try {
     if (!dbPool) return res.status(500).json({ error: 'DB not connected' });
     const { id } = req.params;
-    await dbPool.query('DELETE FROM products WHERE id = ?', [id]);
+    const productsTable = await getTableName('products');
+    await dbPool.query(`DELETE FROM ${productsTable} WHERE id = ?`, [id]);
     res.json({ success: true, message: 'Product deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -373,7 +389,10 @@ app.get('/api/orders', async (req, res) => {
     if (!dbPool) return res.status(500).json({ error: 'DB not connected' });
     const { user_id } = req.query;
 
-    let sql = 'SELECT * FROM orders';
+    const ordersTable = await getTableName('orders');
+    const orderItemsTable = await getTableName('order_items');
+
+    let sql = `SELECT * FROM ${ordersTable}`;
     const params = [];
     if (user_id) {
       sql += ' WHERE user_id = ?';
@@ -385,7 +404,7 @@ app.get('/api/orders', async (req, res) => {
 
     // Fetch items for each order
     for (const order of orders) {
-      const [items] = await dbPool.query('SELECT * FROM order_items WHERE order_id = ?', [order.id]);
+      const [items] = await dbPool.query(`SELECT * FROM ${orderItemsTable} WHERE order_id = ?`, [order.id]);
       order.items = items;
     }
 
@@ -416,10 +435,14 @@ app.post('/api/orders', async (req, res) => {
       return res.status(400).json({ error: 'Missing required order details or items' });
     }
 
+    const ordersTable = await getTableName('orders');
+    const orderItemsTable = await getTableName('order_items');
+    const productsTable = await getTableName('products');
+
     // Verify stock for all items
     for (const item of items) {
       if (item.product_id) {
-        const [prod] = await dbPool.query('SELECT id, name, stock FROM products WHERE id = ?', [item.product_id]);
+        const [prod] = await dbPool.query(`SELECT id, name, stock FROM ${productsTable} WHERE id = ?`, [item.product_id]);
         if (prod.length > 0 && prod[0].stock < item.quantity) {
           return res.status(400).json({
             error: `สินค้า "${prod[0].name}" มีสต็อกไม่เพียงพอ (เหลือ ${prod[0].stock} ชิ้น)`
@@ -435,7 +458,7 @@ app.post('/api/orders', async (req, res) => {
     const orderNumber = `ORD-${dateStr}-${rand}`;
 
     const [orderRs] = await dbPool.query(
-      `INSERT INTO orders 
+      `INSERT INTO ${ordersTable} 
         (order_number, user_id, recipient_name, phone, address, province, postal_code, payment_method, slip_url, total_amount, status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Waiting for Payment')`,
       [orderNumber, user_id, recipient_name, phone, address, province, postal_code, payment_method, slip_url, total_amount]
@@ -446,7 +469,7 @@ app.post('/api/orders', async (req, res) => {
     // Insert order items & reduce stock in database
     for (const item of items) {
       await dbPool.query(
-        `INSERT INTO order_items (order_id, product_id, product_name, price, quantity, image_url)
+        `INSERT INTO ${orderItemsTable} (order_id, product_id, product_name, price, quantity, image_url)
          VALUES (?, ?, ?, ?, ?, ?)`,
         [orderId, item.product_id || null, item.product_name, Number(item.price), Number(item.quantity), item.image_url || null]
       );
@@ -454,7 +477,7 @@ app.post('/api/orders', async (req, res) => {
       // Deduct stock
       if (item.product_id) {
         await dbPool.query(
-          `UPDATE products 
+          `UPDATE ${productsTable} 
            SET stock = GREATEST(0, stock - ?),
                stock_text = CONCAT(GREATEST(0, stock - ?), ' in stock'),
                badge_status = CASE 
@@ -500,7 +523,8 @@ app.put('/api/orders/:id/status', async (req, res) => {
       return res.status(400).json({ error: 'Invalid order status' });
     }
 
-    await dbPool.query('UPDATE orders SET status = ? WHERE id = ?', [status, id]);
+    const ordersTable = await getTableName('orders');
+    await dbPool.query(`UPDATE ${ordersTable} SET status = ? WHERE id = ?`, [status, id]);
     res.json({ success: true, message: `Status updated to ${status}` });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -514,9 +538,11 @@ app.get('/api/wishlist/:userId', async (req, res) => {
   try {
     if (!dbPool) return res.status(500).json({ error: 'DB not connected' });
     const { userId } = req.params;
+    const wishlistsTable = await getTableName('wishlists');
+    const productsTable = await getTableName('products');
     const [rows] = await dbPool.query(
-      `SELECT p.* FROM wishlists w 
-       JOIN products p ON w.product_id = p.id 
+      `SELECT p.* FROM ${wishlistsTable} w 
+       JOIN ${productsTable} p ON w.product_id = p.id 
        WHERE w.user_id = ?`,
       [userId]
     );
@@ -531,8 +557,9 @@ app.post('/api/wishlist/toggle', async (req, res) => {
     if (!dbPool) return res.status(500).json({ error: 'DB not connected' });
     const { user_id = 'guest', product_id } = req.body;
 
+    const wishlistsTable = await getTableName('wishlists');
     const [exists] = await dbPool.query(
-      'SELECT id FROM wishlists WHERE user_id = ? AND product_id = ?',
+      `SELECT id FROM ${wishlistsTable} WHERE user_id = ? AND product_id = ?`,
       [user_id, product_id]
     );
 
