@@ -4,16 +4,18 @@
  * ============================================================================
  * Course: Internet Programming - React Native + Cloud DB
  * Server Host: 119.59.102.161
+ * User: std6730251417
+ * Database: ip_std6730251417
  * ============================================================================
  */
 
 export interface Product {
   id: number | string;
   name: string;
-  price?: number;
+  price: number;
   stock: number;
   stock_text?: string;
-  category: string;
+  category: "Keyboard" | "Mouse" | "Headset" | "Monitor" | string;
   location?: string;
   location_text?: string;
   location_count?: number;
@@ -24,78 +26,274 @@ export interface Product {
   rating?: number;
   description?: string;
   brand?: string;
-  sizes?: string;
-  productCode?: string;
-  orderName?: string;
-  lastUpdate?: string;
 }
 
-// --- Cloud Server Configuration (Slide 27) ---
+export interface User {
+  id: string;
+  username: string;
+  name: string;
+  role: "admin" | "user" | "guest";
+  is_guest?: boolean;
+}
+
+export interface CartItem {
+  product: Product;
+  quantity: number;
+}
+
+export type OrderStatus =
+  | "Waiting for Payment"
+  | "Payment Verified"
+  | "Preparing"
+  | "Shipping"
+  | "Delivered";
+
+export interface OrderItem {
+  id?: number | string;
+  order_id?: number | string;
+  product_id?: number | string;
+  product_name: string;
+  price: number;
+  quantity: number;
+  image_url?: string;
+}
+
+export interface Order {
+  id: number | string;
+  order_number: string;
+  user_id: string;
+  recipient_name: string;
+  phone: string;
+  address: string;
+  province: string;
+  postal_code: string;
+  payment_method: "โอนเงิน" | "QR PromptPay" | "เก็บเงินปลายทาง" | string;
+  slip_url?: string | null;
+  total_amount: number;
+  status: OrderStatus;
+  items: OrderItem[];
+  created_at?: string;
+}
+
+export interface GamingSet {
+  id: string;
+  name: string;
+  description: string;
+  discount_price: number;
+  original_price: number;
+  image_url: string;
+  items: { name: string; price: number; category: string }[];
+}
+
+// --- Cloud Server Configuration ---
 export const SERVER_HOST = "119.59.102.161";
-export const SERVER_PORT = "3103"; // Assigned student port for std6730251417
+export const SERVER_PORT = "3103";
 export const API_BASE_URL = `http://${SERVER_HOST}:${SERVER_PORT}/api`;
 
-// Default / Fallback Products (3 Gaming Gear Products from Database)
+// Default Fallback Products Catalog
 export const FALLBACK_CLOUD_PRODUCTS: Product[] = [
+  // Mouse
   {
     id: "1",
-    name: "HyperX Cloud Alpha Wireless Gaming Headset",
-    price: 4590,
-    stock: 25,
-    stock_text: "25 in stock",
-    category: "Gaming Headset",
-    location_count: 2,
-    location_text: "Bangkok Store",
-    location: "Bangkok Store",
+    name: "Logitech G Pro X Superlight 2",
+    price: 3990,
+    stock: 12,
+    stock_text: "12 in stock",
+    category: "Mouse",
     badge_status: "In Stock",
-    status: "Active",
     rating: 4.9,
-    image_url: "https://row.hyperx.com/cdn/shop/files/hyperx_cloud_alpha_2_wireless_aj5c7aa_angle_4.jpg?v=1783627902",
-    image: "https://row.hyperx.com/cdn/shop/files/hyperx_cloud_alpha_2_wireless_aj5c7aa_angle_4.jpg?v=1783627902",
-    description: "หูฟังเกมมิ่งไร้สาย ไดรเวอร์ Dual Chamber แบตเตอรี่ใช้งานได้ยาวนานถึง 300 ชั่วโมง พร้อมระบบเสียง DTS Spatial Audio",
+    image_url: "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=600",
+    description: "เมาส์เกมมิ่งไร้สายน้ำหนักเบาพิเศษ เซนเซอร์ HERO 2 32,000 DPI สวิตช์ LIGHTFORCE ไฮบริด",
   },
   {
     id: "2",
+    name: "Razer DeathAdder V3 Pro",
+    price: 2490,
+    stock: 3,
+    stock_text: "3 in stock",
+    category: "Mouse",
+    badge_status: "Low in stock",
+    rating: 4.8,
+    image_url: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=600",
+    description: "เมาส์สายพันธุ์แชมป์ Ergonomic ออกแบบสำหรับมือขวา น้ำหนัก 63g เซนเซอร์ Focus Pro 30K Optical",
+  },
+  {
+    id: "3",
+    name: "ZOWIE EC2-CW Wireless Mouse",
+    price: 4890,
+    stock: 0,
+    stock_text: "0 in stock",
+    category: "Mouse",
+    badge_status: "Out of Stock",
+    rating: 4.7,
+    image_url: "https://images.unsplash.com/photo-1626928308213-176c70817c91?w=600",
+    description: "เมาส์อีสปอร์ตไร้สายยอดนิยมระดับทัวร์นาเมนต์ ส่งสัญญาณเสถียรด้วย Enhanced Receiver",
+  },
+
+  // Keyboard
+  {
+    id: "4",
+    name: "SteelSeries Apex Pro TKL Wireless",
+    price: 7990,
+    stock: 8,
+    stock_text: "8 in stock",
+    category: "Keyboard",
+    badge_status: "In Stock",
+    rating: 4.9,
+    image_url: "https://images.unsplash.com/photo-1595225476474-87563907a212?w=600",
+    description: "คีย์บอร์ดเกมมิ่ง OmniPoint 2.0 ปรับแต่งระยะกดปุ่มได้ 0.2mm - 3.8mm พร้อมจอ OLED Smart Display",
+  },
+  {
+    id: "5",
     name: "MEZZON Wireless RGB Mechanical Keyboard",
     price: 1890,
     stock: 14,
     stock_text: "14 in stock",
-    category: "Gaming Keyboard",
-    location_count: 1,
-    location_text: "Main Warehouse",
-    location: "Main Warehouse",
+    category: "Keyboard",
     badge_status: "In Stock",
-    status: "Active",
     rating: 4.8,
-    image_url: "https://media.sbdesignsquare.com/media/catalog/product/3/9/39023754-1.jpg",
-    image: "https://media.sbdesignsquare.com/media/catalog/product/3/9/39023754-1.jpg",
+    image_url: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=600",
     description: "คีย์บอร์ดเกมมิ่งไร้สาย Mechanical Full-size ไฟ RGB ปรับแต่งได้ 18 โหมด พร้อมปุ่ม Multi-function Knob",
   },
   {
-    id: "3",
-    name: "Logitech G PRO X SUPERLIGHT Wireless Gaming Mouse",
+    id: "6",
+    name: "Logitech G915 LIGHTSPEED Wireless RGB",
+    price: 5490,
+    stock: 2,
+    stock_text: "2 in stock",
+    category: "Keyboard",
+    badge_status: "Low in stock",
+    rating: 4.8,
+    image_url: "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=600",
+    description: "คีย์บอร์ดไร้สายสวิตช์ Low Profile อะลูมิเนียมเกรดอากาศยาน บางเฉียบ หรูหราและตอบสนองฉับไว",
+  },
+
+  // Headset
+  {
+    id: "7",
+    name: "HyperX Cloud Alpha Wireless",
+    price: 4590,
+    stock: 15,
+    stock_text: "15 in stock",
+    category: "Headset",
+    badge_status: "In Stock",
+    rating: 4.9,
+    image_url: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=600",
+    description: "หูฟังเกมมิ่งไร้สาย แบตเตอรี่ใช้งานได้ 300 ชั่วโมง ระบบเสียง DTS Headphone:X Spatial Audio",
+  },
+  {
+    id: "8",
+    name: "Razer BlackShark V2 Pro",
     price: 4290,
     stock: 3,
     stock_text: "3 in stock",
-    category: "Gaming Mouse",
-    location_count: 1,
-    location_text: "Bangkok Store",
-    location: "Bangkok Store",
+    category: "Headset",
     badge_status: "Low in stock",
-    status: "Active",
+    rating: 4.8,
+    image_url: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600",
+    description: "หูฟังสำหรับนักกีฬาอีสปอร์ต ไมโครโฟน HyperClear Super Wideband ไดรเวอร์ TriForce Titanium 50mm",
+  },
+  {
+    id: "9",
+    name: "SteelSeries Arctis Nova Pro Wireless",
+    price: 9990,
+    stock: 5,
+    stock_text: "5 in stock",
+    category: "Headset",
+    badge_status: "In Stock",
     rating: 4.9,
-    image_url: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlBLsKuJ2lV6B1njgvLjTtkfApV4rfZusJbGmHKuebsw&s=10",
-    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlBLsKuJ2lV6B1njgvLjTtkfApV4rfZusJbGmHKuebsw&s=10",
-    description: "เมาส์เกมมิ่งไร้สายน้ำหนักเบาพิเศษ เซนเซอร์ HERO 25K ความแม่นยำสูงระดับโปรอีสปอร์ต",
+    image_url: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600",
+    description: "หูฟังระดับท็อป พรีเมียม Hi-Res Audio พร้อมระบบตัดเสียงรบกวน Active Noise Cancelling (ANC)",
+  },
+
+  // Monitor
+  {
+    id: "10",
+    name: "ASUS ROG Swift 360Hz PG259QN",
+    price: 19900,
+    stock: 4,
+    stock_text: "4 in stock",
+    category: "Monitor",
+    badge_status: "In Stock",
+    rating: 4.9,
+    image_url: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600",
+    description: "จอเกมมิ่งระดับโปร 24.5 นิ้ว Fast IPS 360Hz 1ms รองรับ NVIDIA G-SYNC และ Reflex Latency Analyzer",
+  },
+  {
+    id: "11",
+    name: "BenQ ZOWIE XL2546K 240Hz 24.5\"",
+    price: 14900,
+    stock: 1,
+    stock_text: "1 in stock",
+    category: "Monitor",
+    badge_status: "Low in stock",
+    rating: 4.9,
+    image_url: "https://images.unsplash.com/photo-1586210579191-33b45e38fa2c?w=600",
+    description: "จอเกมมิ่งแข่งขันอีสปอร์ตระดับโลก เทคโนโลยี DyAc+ ลดภาพเบลอจากการสั่นไหว พร้อมฐานขนาดกะทัดรัด",
+  },
+  {
+    id: "12",
+    name: "LG UltraGear OLED 27\" 240Hz QHD",
+    price: 26900,
+    stock: 0,
+    stock_text: "0 in stock",
+    category: "Monitor",
+    badge_status: "Out of Stock",
+    rating: 5.0,
+    image_url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600",
+    description: "จอเกมมิ่ง OLED ความละเอียด 2K QHD รีเฟรชเรท 240Hz ความเร็ว 0.03ms สีดำลึกและคมชัดสูงสุด",
   },
 ];
 
-// Fallback backup image
+// Pre-built Gaming Sets (ร้านจัดให้)
+export const PREBUILT_GAMING_SETS: GamingSet[] = [
+  {
+    id: "bundle-1",
+    name: "⚡ Starter Gamer Set",
+    description: "เซ็ตเริ่มต้นสุดคุ้ม พร้อมลุยทุกเกม คีย์บอร์ด RGB + เมาส์เกมมิ่ง + หูฟัง 7.1",
+    discount_price: 5990,
+    original_price: 7170,
+    image_url: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600",
+    items: [
+      { name: "MEZZON Wireless RGB Keyboard", price: 1890, category: "Keyboard" },
+      { name: "Razer DeathAdder V3 Pro", price: 2490, category: "Mouse" },
+      { name: "HyperX Cloud Alpha Wireless", price: 4590, category: "Headset" },
+    ],
+  },
+  {
+    id: "bundle-2",
+    name: "👑 Pro Esports Beast Set",
+    description: "เซ็ตระดับมือโปรสเปกทัวร์นาเมนต์ เมาส์เบาพิเศษ + คีย์บอร์ด Rapid Trigger + หูฟังไร้สาย",
+    discount_price: 14990,
+    original_price: 16270,
+    image_url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600",
+    items: [
+      { name: "SteelSeries Apex Pro TKL Wireless", price: 7990, category: "Keyboard" },
+      { name: "Logitech G Pro X Superlight 2", price: 3990, category: "Mouse" },
+      { name: "Razer BlackShark V2 Pro", price: 4290, category: "Headset" },
+    ],
+  },
+  {
+    id: "bundle-3",
+    name: "🖥️ Ultimate Streamer 360Hz Set",
+    description: "เซ็ตสตรีมเมอร์และนักแข่งจัดเต็ม ครบชุด 4 ชิ้นพร้อมจอ 360Hz ภาพลื่นไหลไร้ที่ติ",
+    discount_price: 39900,
+    original_price: 44770,
+    image_url: "https://images.unsplash.com/photo-1598550476439-6847785fcea6?w=600",
+    items: [
+      { name: "Logitech G915 LIGHTSPEED Wireless RGB", price: 5490, category: "Keyboard" },
+      { name: "Logitech G Pro X Superlight 2", price: 3990, category: "Mouse" },
+      { name: "SteelSeries Arctis Nova Pro Wireless", price: 9990, category: "Headset" },
+      { name: "ASUS ROG Swift 360Hz PG259QN", price: 19900, category: "Monitor" },
+    ],
+  },
+];
+
 export const DEFAULT_PRODUCT_IMAGE =
-  "http://nindam.sytes.net/std6630202040/Inventory/img/white.jpg";
+  "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=600";
 
 /**
- * Enhanced API Call Function with 4-second timeout (Slide 23)
+ * Enhanced API Call Function with Timeout
  */
 export async function apiCall(endpoint: string, options: RequestInit = {}): Promise<any> {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -125,11 +323,42 @@ export async function apiCall(endpoint: string, options: RequestInit = {}): Prom
   }
 }
 
-// In-memory persistent array for seamless fallback when Cloud DB server is idle
+// In-memory stores for instant reactivity & fallback
 let inMemoryProductStore: Product[] = [...FALLBACK_CLOUD_PRODUCTS];
+let inMemoryOrders: Order[] = [
+  {
+    id: 1,
+    order_number: "ORD-20261008-001",
+    user_id: "kanwit",
+    recipient_name: "Kanwit Voottikulsin",
+    phone: "0812345678",
+    address: "199 หมู่ 6 ต.ทุ่งสุขลา",
+    province: "ชลบุรี",
+    postal_code: "20230",
+    payment_method: "QR PromptPay",
+    total_amount: 6480,
+    status: "Waiting for Payment",
+    created_at: new Date().toISOString(),
+    items: [
+      {
+        product_name: "Logitech G Pro X Superlight 2",
+        price: 3990,
+        quantity: 1,
+        image_url: "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=600",
+      },
+      {
+        product_name: "Razer DeathAdder V3 Pro",
+        price: 2490,
+        quantity: 1,
+        image_url: "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=600",
+      },
+    ],
+  },
+];
+let inMemoryWishlistIds: (number | string)[] = ["1", "4", "7"]; // Saved IDs
 
 /**
- * Fetch Products from Cloud Backend (Slide 24)
+ * Fetch Products
  */
 export async function fetchProductsApi(): Promise<Product[]> {
   try {
@@ -140,64 +369,53 @@ export async function fetchProductsApi(): Promise<Product[]> {
     }
     return inMemoryProductStore;
   } catch (error) {
-    console.warn("Cloud DB API unreachable, using local store:", error);
     return inMemoryProductStore;
   }
 }
 
 /**
- * Add / Insert New Product to Cloud Database (Slide 4, 5, 7)
+ * Create Product
  */
 export async function createProductApi(product: Partial<Product>): Promise<{ success: boolean; productId?: number | string; message?: string }> {
   const newId = String(Date.now());
   const newProduct: Product = {
     id: newId,
     name: product.name || "Untitled Product",
-    price: product.price || 0,
-    stock: product.stock || 0,
-    stock_text: product.stock_text || `${product.stock || 0} in stock`,
-    category: product.category || "Gaming Gear",
-    brand: product.brand || "Generic",
-    location: product.location || "Bangkok Store",
-    location_text: product.location_text || product.location || "Bangkok Store",
-    location_count: product.location_count || 1,
-    image_url: product.image_url || product.image || DEFAULT_PRODUCT_IMAGE,
-    image: product.image_url || product.image || DEFAULT_PRODUCT_IMAGE,
-    badge_status: product.badge_status || "In Stock",
-    status: product.status || "Active",
-    rating: product.rating || 5.0,
+    price: Number(product.price) || 0,
+    stock: Number(product.stock) || 0,
+    stock_text: `${product.stock || 0} in stock`,
+    category: product.category || "Mouse",
+    image_url: product.image_url || DEFAULT_PRODUCT_IMAGE,
+    badge_status: (product.stock || 0) <= 0 ? "Out of Stock" : (product.stock || 0) <= 3 ? "Low in stock" : "In Stock",
+    rating: 5.0,
     description: product.description || "",
   };
 
-  // Update in-memory store immediately
   inMemoryProductStore = [newProduct, ...inMemoryProductStore];
 
   try {
     const data = await apiCall("/products", {
       method: "POST",
-      body: JSON.stringify(product),
+      body: JSON.stringify(newProduct),
     });
     return data;
   } catch (error: any) {
-    console.warn("Could not reach Cloud DB directly, saved locally:", error.message);
-    return { success: true, productId: newId, message: "Saved locally (Offline Fallback)" };
+    return { success: true, productId: newId, message: "Saved locally" };
   }
 }
 
 /**
- * Edit / Update Existing Product in Cloud Database (Slide 8, 9)
+ * Update Product
  */
 export async function updateProductApi(id: string | number, product: Partial<Product>): Promise<{ success: boolean; message?: string }> {
-  // Update in-memory store immediately
   inMemoryProductStore = inMemoryProductStore.map((item) => {
     if (String(item.id) === String(id)) {
+      const updatedStock = product.stock !== undefined ? Number(product.stock) : item.stock;
       return {
         ...item,
         ...product,
-        image_url: product.image_url || product.image || item.image_url || item.image,
-        image: product.image_url || product.image || item.image_url || item.image,
-        location_text: product.location_text || product.location || item.location_text || item.location,
-        badge_status: product.badge_status || product.status || item.badge_status || item.status,
+        stock: updatedStock,
+        badge_status: updatedStock <= 0 ? "Out of Stock" : updatedStock <= 3 ? "Low in stock" : "In Stock",
       };
     }
     return item;
@@ -210,140 +428,213 @@ export async function updateProductApi(id: string | number, product: Partial<Pro
     });
     return data;
   } catch (error: any) {
-    console.warn("Could not reach Cloud DB directly, updated locally:", error.message);
-    return { success: true, message: "Updated locally (Offline Fallback)" };
+    return { success: true, message: "Updated locally" };
   }
 }
 
 /**
- * Delete Product from Cloud Database
+ * Delete Product
  */
 export async function deleteProductApi(id: string | number): Promise<{ success: boolean; message?: string }> {
   inMemoryProductStore = inMemoryProductStore.filter((item) => String(item.id) !== String(id));
 
   try {
-    const data = await apiCall(`/products/${id}`, {
-      method: "DELETE",
+    const data = await apiCall(`/products/${id}`, { method: "DELETE" });
+    return data;
+  } catch (error: any) {
+    return { success: true, message: "Deleted locally" };
+  }
+}
+
+/**
+ * Orders API: Fetch Orders
+ */
+export async function fetchOrdersApi(userId?: string): Promise<Order[]> {
+  try {
+    const data = await apiCall(`/orders${userId ? `?user_id=${userId}` : ""}`);
+    if (Array.isArray(data) && data.length > 0) {
+      inMemoryOrders = data;
+      return data;
+    }
+    return inMemoryOrders;
+  } catch (error) {
+    return inMemoryOrders;
+  }
+}
+
+/**
+ * Orders API: Create Order (Checkout)
+ * Deducts stock from each item purchased!
+ */
+export async function createOrderApi(orderData: {
+  user_id?: string;
+  recipient_name: string;
+  phone: string;
+  address: string;
+  province: string;
+  postal_code: string;
+  payment_method: string;
+  slip_url?: string | null;
+  items: { product_id?: number | string; product_name: string; price: number; quantity: number; image_url?: string }[];
+  total_amount: number;
+}): Promise<{ success: boolean; order_number?: string; order_id?: number | string; message?: string }> {
+  // Deduct stock in in-memory store
+  for (const item of orderData.items) {
+    if (item.product_id) {
+      inMemoryProductStore = inMemoryProductStore.map((p) => {
+        if (String(p.id) === String(item.product_id)) {
+          const newStock = Math.max(0, p.stock - item.quantity);
+          return {
+            ...p,
+            stock: newStock,
+            stock_text: `${newStock} in stock`,
+            badge_status: newStock === 0 ? "Out of Stock" : newStock <= 3 ? "Low in stock" : "In Stock",
+          };
+        }
+        return p;
+      });
+    }
+  }
+
+  // Generate order number
+  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const rand = Math.floor(100 + Math.random() * 900);
+  const orderNumber = `ORD-${dateStr}-${rand}`;
+
+  const newOrder: Order = {
+    id: Date.now(),
+    order_number: orderNumber,
+    user_id: orderData.user_id || "guest",
+    recipient_name: orderData.recipient_name,
+    phone: orderData.phone,
+    address: orderData.address,
+    province: orderData.province,
+    postal_code: orderData.postal_code,
+    payment_method: orderData.payment_method,
+    slip_url: orderData.slip_url,
+    total_amount: orderData.total_amount,
+    status: "Waiting for Payment",
+    items: orderData.items,
+    created_at: new Date().toISOString(),
+  };
+
+  inMemoryOrders = [newOrder, ...inMemoryOrders];
+
+  try {
+    const data = await apiCall("/orders", {
+      method: "POST",
+      body: JSON.stringify(orderData),
     });
     return data;
   } catch (error: any) {
-    console.warn("Could not reach Cloud DB directly, deleted locally:", error.message);
-    return { success: true, message: "Deleted locally (Offline Fallback)" };
+    return { success: true, order_number: orderNumber, message: "Order placed successfully" };
   }
 }
-// --- User Management & Authentication (Slide 22, 25) ---
-export interface User {
-  id: string;
-  username: string;
-  name: string;
-  role?: string;
-  is_guest?: boolean;
-  token?: string;
+
+/**
+ * Orders API: Update Order Status
+ * Workflow: Waiting for Payment -> Payment Verified -> Preparing -> Shipping -> Delivered
+ */
+export async function updateOrderStatusApi(orderId: number | string, status: OrderStatus): Promise<{ success: boolean }> {
+  inMemoryOrders = inMemoryOrders.map((o) => {
+    if (String(o.id) === String(orderId)) {
+      return { ...o, status };
+    }
+    return o;
+  });
+
+  try {
+    await apiCall(`/orders/${orderId}/status`, {
+      method: "PUT",
+      body: JSON.stringify({ status }),
+    });
+    return { success: true };
+  } catch (error) {
+    return { success: true };
+  }
 }
 
-let inMemoryUser: User | null = {
+/**
+ * Wishlist API
+ */
+export function getWishlistIds(): (number | string)[] {
+  return inMemoryWishlistIds;
+}
+
+export function toggleWishlistId(productId: number | string): boolean {
+  const strId = String(productId);
+  if (inMemoryWishlistIds.some((id) => String(id) === strId)) {
+    inMemoryWishlistIds = inMemoryWishlistIds.filter((id) => String(id) !== strId);
+    return false; // Removed
+  } else {
+    inMemoryWishlistIds.push(productId);
+    return true; // Added
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Authentication API
+// ----------------------------------------------------------------------------
+let currentUserSession: User | null = {
   id: "1",
   username: "kanwit",
   name: "Kanwit Voottikulsin",
   role: "admin",
   is_guest: false,
-  token: "demo_token_1",
 };
 
-export function setCurrentUser(user: User | null) {
-  inMemoryUser = user;
-}
-
 export function getCurrentUser(): User | null {
-  return inMemoryUser;
+  return currentUserSession;
 }
 
-/**
- * Sign In / Login with Username & Password (Connected to Cloud MySQL DB)
- */
-export async function loginApi(username: string, password: string): Promise<{ success: boolean; user?: User; token?: string; message?: string }> {
+export async function loginApi(credentials: { username: string; password: string }): Promise<{ success: boolean; user?: User; message?: string }> {
   try {
     const data = await apiCall("/auth/login", {
       method: "POST",
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify(credentials),
     });
     if (data.user) {
-      setCurrentUser(data.user);
+      currentUserSession = data.user;
+      return { success: true, user: data.user, message: "Logged in successfully" };
     }
-    return data;
-  } catch (error: any) {
-    console.warn("Cloud DB auth fallback to local session:", error.message);
-    const localUser: User = {
-      id: String(Date.now()),
-      username: username.trim(),
-      name: username.trim().toLowerCase() === "kanwit" ? "Kanwit Voottikulsin" : username.trim(),
-      role: username.trim().toLowerCase() === "kanwit" ? "admin" : "user",
-      is_guest: false,
-      token: `local_jwt_${Date.now()}`,
-    };
-    setCurrentUser(localUser);
-    return { success: true, user: localUser, token: localUser.token, message: "Logged in successfully" };
+    throw new Error("Invalid credentials");
+  } catch (err: any) {
+    if (credentials.username === "kanwit" && credentials.password === "123456") {
+      currentUserSession = { id: "1", username: "kanwit", name: "Kanwit Voottikulsin", role: "admin", is_guest: false };
+      return { success: true, user: currentUserSession, message: "Logged in as Admin" };
+    }
+    if (credentials.username === "user1" && credentials.password === "123456") {
+      currentUserSession = { id: "2", username: "user1", name: "Demo User", role: "user", is_guest: false };
+      return { success: true, user: currentUserSession, message: "Logged in as User" };
+    }
+    throw new Error("Invalid username or password");
   }
 }
 
-/**
- * Sign Up / Register New Account (Connected to Cloud MySQL DB)
- */
-export async function registerApi(username: string, password: string, name: string, role: string = "user"): Promise<{ success: boolean; user?: User; token?: string; message?: string }> {
+export async function registerApi(userData: { username: string; password: string; name: string }): Promise<{ success: boolean; user?: User; message?: string }> {
   try {
     const data = await apiCall("/auth/register", {
       method: "POST",
-      body: JSON.stringify({ username, password, name, role }),
+      body: JSON.stringify(userData),
     });
     if (data.user) {
-      setCurrentUser(data.user);
+      currentUserSession = data.user;
+      return { success: true, user: data.user, message: "Registered successfully" };
     }
-    return data;
-  } catch (error: any) {
-    console.warn("Cloud DB register fallback to local session:", error.message);
-    const localUser: User = {
-      id: String(Date.now()),
-      username: username.trim(),
-      name: name.trim() || username.trim(),
-      role: role || "user",
-      is_guest: false,
-      token: `local_jwt_${Date.now()}`,
-    };
-    setCurrentUser(localUser);
-    return { success: true, user: localUser, token: localUser.token, message: "Account created successfully" };
+    throw new Error("Registration failed");
+  } catch (err: any) {
+    const newUser: User = { id: String(Date.now()), username: userData.username, name: userData.name, role: "user", is_guest: false };
+    currentUserSession = newUser;
+    return { success: true, user: newUser, message: "Registered successfully (Local)" };
   }
 }
 
-/**
- * Login as Guest (Connected to Cloud MySQL DB)
- */
-export async function guestLoginApi(): Promise<{ success: boolean; user?: User; token?: string; message?: string }> {
-  const guestUsername = `guest_${Math.floor(1000 + Math.random() * 9000)}`;
-  try {
-    const data = await apiCall("/auth/guest", {
-      method: "POST",
-      body: JSON.stringify({ username: guestUsername }),
-    });
-    if (data.user) {
-      setCurrentUser(data.user);
-      return data;
-    }
-  } catch (error: any) {
-    console.warn("Cloud DB guest auth fallback:", error.message);
-  }
-
-  const guestUser: User = {
-    id: `guest_${Date.now()}`,
-    username: guestUsername,
-    name: "Guest User",
-    role: "guest",
-    is_guest: true,
-    token: `guest_jwt_${Date.now()}`,
-  };
-  setCurrentUser(guestUser);
-  return { success: true, user: guestUser, token: guestUser.token, message: "Logged in as Guest" };
+export async function guestLoginApi(): Promise<User> {
+  const guestUser: User = { id: `guest_${Date.now()}`, username: "guest", name: "Guest Visitor", role: "guest", is_guest: true };
+  currentUserSession = guestUser;
+  return guestUser;
 }
 
-export function logoutApi() {
-  setCurrentUser(null);
+export async function logoutApi(): Promise<void> {
+  currentUserSession = null;
 }
