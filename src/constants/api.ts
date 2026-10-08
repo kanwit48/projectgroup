@@ -294,6 +294,70 @@ export const FALLBACK_CLOUD_PRODUCTS: Product[] = [
     image_url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600",
     description: "จอเกมมิ่ง OLED ความละเอียด 2K QHD รีเฟรชเรท 240Hz ความเร็ว 0.03ms สีดำลึกและคมชัดสูงสุด",
   },
+  {
+    id: "13",
+    name: "Razer Huntsman Mini 60% Optical",
+    price: 3490,
+    stock: 10,
+    stock_text: "10 in stock",
+    category: "Keyboard",
+    brand: "Razer",
+    connection: "Wired",
+    dpi: null,
+    size: "60%",
+    rating: 4.8,
+    badge_status: "In Stock",
+    image_url: "https://images.unsplash.com/photo-1595225476474-87563907a212?w=600",
+    description: "คีย์บอร์ดเกมมิ่ง 60% Optical Switch สวิตช์แสงตอบสนองระดับเสี้ยววินาที สำหรับเกมเมอร์ FPS",
+  },
+  {
+    id: "14",
+    name: "HyperX Cloud III Gaming Headset",
+    price: 2990,
+    stock: 8,
+    stock_text: "8 in stock",
+    category: "Headset",
+    brand: "HyperX",
+    connection: "Wired",
+    dpi: null,
+    size: "Over-Ear (Memory Foam)",
+    rating: 4.8,
+    badge_status: "In Stock",
+    image_url: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=600",
+    description: "หูฟังเกมมิ่งระดับตำนาน ปรับปรุงเสียงคมชัด ไมโครโฟนตัดเสียงรบกวน 10mm เมมโมรี่โฟมนุ่มสบาย",
+  },
+  {
+    id: "15",
+    name: "AOC 24G2SP 165Hz IPS Gaming Monitor",
+    price: 5990,
+    stock: 6,
+    stock_text: "6 in stock",
+    category: "Monitor",
+    brand: "AOC",
+    connection: "Wired",
+    dpi: null,
+    size: "24 Inch",
+    rating: 4.8,
+    badge_status: "In Stock",
+    image_url: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600",
+    description: "จอเกมมิ่ง IPS 165Hz 1ms MPRT คุ้มค่าที่สุดสำหรับ Valorant และเกม FPS esports",
+  },
+  {
+    id: "16",
+    name: "SteelSeries QcK Heavy Mousepad",
+    price: 690,
+    stock: 25,
+    stock_text: "25 in stock",
+    category: "Mouse Pad",
+    brand: "SteelSeries",
+    connection: "Cloth",
+    dpi: null,
+    size: "Large (450x400mm)",
+    rating: 4.9,
+    badge_status: "In Stock",
+    image_url: "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=600",
+    description: "แผ่นรองเมาส์ผ้าระดับโปร หนาพิเศษ 6mm ช่วยควบคุมเมาส์ได้อย่างแม่นยำ เหมาะกับเกมยิง Tactical",
+  },
 ];
 
 // Pre-built Gaming Sets (ร้านจัดให้)
@@ -640,7 +704,15 @@ export function getCurrentUser(): User | null {
   return currentUserSession;
 }
 
-export async function loginApi(credentials: { username: string; password: string }): Promise<{ success: boolean; user?: User; message?: string }> {
+export function setCurrentUser(user: User | null): void {
+  currentUserSession = user;
+}
+
+export async function loginApi(
+  arg1: { username: string; password: string } | string,
+  arg2?: string
+): Promise<{ success: boolean; user?: User; message?: string }> {
+  const credentials = typeof arg1 === "string" ? { username: arg1, password: arg2 || "" } : arg1;
   try {
     const data = await apiCall("/auth/login", {
       method: "POST",
@@ -664,7 +736,12 @@ export async function loginApi(credentials: { username: string; password: string
   }
 }
 
-export async function registerApi(userData: { username: string; password: string; name: string }): Promise<{ success: boolean; user?: User; message?: string }> {
+export async function registerApi(
+  arg1: { username: string; password: string; name: string } | string,
+  arg2?: string,
+  arg3?: string
+): Promise<{ success: boolean; user?: User; message?: string }> {
+  const userData = typeof arg1 === "string" ? { username: arg1, password: arg2 || "", name: arg3 || arg1 } : arg1;
   try {
     const data = await apiCall("/auth/register", {
       method: "POST",

@@ -60,6 +60,8 @@ import {
   PREBUILT_GAMING_SETS,
   DEFAULT_PRODUCT_IMAGE,
 } from "@/constants/api";
+import { NexoraAiSetupBuilder } from "@/components/NexoraAiSetupBuilder";
+import { NexoraAiChatModal } from "@/components/NexoraAiChatModal";
 
 const COLORS = {
   primary: "#7C3AED",       // Purple
@@ -85,6 +87,7 @@ const CATEGORIES = [
   { id: "Mouse", label: "🖱️ Mouse" },
   { id: "Headset", label: "🎧 Headset" },
   { id: "Monitor", label: "🖥️ Monitor" },
+  { id: "Mouse Pad", label: "🖱️ Mouse Pad" },
 ];
 
 const BRANDS = [
@@ -98,6 +101,7 @@ const BRANDS = [
   "ASUS ROG",
   "LG",
   "MEZZON",
+  "AOC",
 ];
 
 const PRICE_RANGES = [
@@ -205,12 +209,17 @@ export default function GamingStoreScreen() {
   const [formDesc, setFormDesc] = useState("");
   const [isSavingProduct, setIsSavingProduct] = useState(false);
 
-  // Gaming Set Custom Builder State
+  // Gaming Set Custom Builder & AI State
   const [builderKeyboard, setBuilderKeyboard] = useState<Product | null>(null);
   const [builderMouse, setBuilderMouse] = useState<Product | null>(null);
   const [builderHeadset, setBuilderHeadset] = useState<Product | null>(null);
   const [builderMonitor, setBuilderMonitor] = useState<Product | null>(null);
-  const [setsSubTab, setSetsSubTab] = useState<"bundles" | "builder">("bundles");
+  const [setsSubTab, setSetsSubTab] = useState<"ai" | "bundles" | "builder">("ai");
+
+  // NEXORA AI Assistant State
+  const [aiChatVisible, setAiChatVisible] = useState(false);
+  const [aiFocusedProduct, setAiFocusedProduct] = useState<Product | null>(null);
+  const [aiInitialPrompt, setAiInitialPrompt] = useState<string>("");
 
   // Load Initial Data
   const loadData = async () => {
@@ -836,6 +845,20 @@ export default function GamingStoreScreen() {
             </Text>
           </View>
 
+          {/* Ask NEXORA AI Advice Button */}
+          <TouchableOpacity
+            style={styles.askAiCardBtn}
+            onPress={() => {
+              setAiFocusedProduct(item);
+              setAiInitialPrompt("");
+              setAiChatVisible(true);
+            }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="sparkles" size={14} color="#C084FC" style={{ marginRight: 6 }} />
+            <Text style={styles.askAiCardBtnText}>🤖 Ask NEXORA AI</Text>
+          </TouchableOpacity>
+
           {/* Add to Cart Button */}
           <TouchableOpacity
             style={[styles.addToCartBtn, isOut && styles.addToCartBtnDisabled]}
@@ -1020,11 +1043,20 @@ export default function GamingStoreScreen() {
         <View style={{ flex: 1, paddingHorizontal: 16 }}>
           <View style={styles.subTabRow}>
             <TouchableOpacity
+              style={[styles.subTabBtn, setsSubTab === "ai" && styles.subTabBtnActive]}
+              onPress={() => setSetsSubTab("ai")}
+            >
+              <Text style={[styles.subTabText, setsSubTab === "ai" && styles.subTabTextActive]}>
+                🤖 AI จัดให้
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={[styles.subTabBtn, setsSubTab === "bundles" && styles.subTabBtnActive]}
               onPress={() => setSetsSubTab("bundles")}
             >
               <Text style={[styles.subTabText, setsSubTab === "bundles" && styles.subTabTextActive]}>
-                ⚡ ร้านจัดให้ (Bundles)
+                ⚡ ร้านจัดให้
               </Text>
             </TouchableOpacity>
 
@@ -1033,12 +1065,24 @@ export default function GamingStoreScreen() {
               onPress={() => setSetsSubTab("builder")}
             >
               <Text style={[styles.subTabText, setsSubTab === "builder" && styles.subTabTextActive]}>
-                🛠️ ลูกค้าจัดเอง (Custom)
+                🛠️ จัดเอง
               </Text>
             </TouchableOpacity>
           </View>
 
-          {setsSubTab === "bundles" ? (
+          {setsSubTab === "ai" ? (
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 30 }}>
+              <NexoraAiSetupBuilder
+                products={products}
+                onAddToCart={addToCart}
+                onOpenAiChatWithPrompt={(prompt) => {
+                  setAiFocusedProduct(null);
+                  setAiInitialPrompt(prompt);
+                  setAiChatVisible(true);
+                }}
+              />
+            </ScrollView>
+          ) : setsSubTab === "bundles" ? (
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 30 }}>
               {PREBUILT_GAMING_SETS.map((bundle) => (
                 <View key={bundle.id} style={styles.bundleCard}>
@@ -2164,6 +2208,36 @@ export default function GamingStoreScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* FLOATING NEXORA AI BUTTON (มุมขวาล่าง) */}
+      <TouchableOpacity
+        style={styles.floatingAiFab}
+        onPress={() => {
+          setAiFocusedProduct(null);
+          setAiInitialPrompt("");
+          setAiChatVisible(true);
+        }}
+        activeOpacity={0.85}
+      >
+        <View style={styles.floatingAiFabInner}>
+          <Text style={{ fontSize: 20 }}>🤖</Text>
+          <View style={styles.floatingFabOnlineDot} />
+        </View>
+        <View style={styles.floatingFabTextBox}>
+          <Text style={styles.floatingFabTitle}>NEXORA AI</Text>
+          <Text style={styles.floatingFabSub}>ถาม AI • แนะนำสเปก</Text>
+        </View>
+      </TouchableOpacity>
+
+      {/* NEXORA AI CHAT MODAL */}
+      <NexoraAiChatModal
+        visible={aiChatVisible}
+        onClose={() => setAiChatVisible(false)}
+        products={products}
+        onAddToCart={addToCart}
+        initialProduct={aiFocusedProduct}
+        initialPrompt={aiInitialPrompt}
+      />
     </SafeAreaView>
   );
 }
@@ -3386,5 +3460,77 @@ const styles = StyleSheet.create({
   navLabelActive: {
     color: COLORS.primary,
     fontWeight: "bold",
+  },
+  // Ask AI Card Button
+  askAiCardBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(124, 58, 237, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(167, 139, 250, 0.4)",
+    paddingVertical: 7,
+    borderRadius: 8,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  askAiCardBtnText: {
+    color: "#C084FC",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  // Floating NEXORA AI FAB (Bottom Right)
+  floatingAiFab: {
+    position: "absolute",
+    bottom: Platform.OS === "ios" ? 85 : 75,
+    right: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1E1B4B", // Deep Indigo
+    borderWidth: 1.5,
+    borderColor: "#8B5CF6",
+    borderRadius: 28,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    shadowColor: "#8B5CF6",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 8,
+    zIndex: 999,
+  },
+  floatingAiFabInner: {
+    position: "relative",
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#6D28D9",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  floatingFabOnlineDot: {
+    position: "absolute",
+    bottom: -1,
+    right: -1,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#10B981",
+    borderWidth: 1.5,
+    borderColor: "#1E1B4B",
+  },
+  floatingFabTextBox: {
+    marginLeft: 8,
+  },
+  floatingFabTitle: {
+    color: "#FFF",
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 0.5,
+  },
+  floatingFabSub: {
+    color: "#A78BFA",
+    fontSize: 9,
+    fontWeight: "600",
   },
 });

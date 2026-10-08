@@ -44,6 +44,10 @@ const INITIAL_PRODUCTS = [
   { id: 10, name: 'ASUS ROG Swift 360Hz PG259QN', price: 19900, stock: 4, category: 'Monitor', image_url: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600', description: 'จอเกมมิ่งระดับโปร 24.5 นิ้ว Fast IPS 360Hz 1ms รองรับ NVIDIA G-SYNC' },
   { id: 11, name: 'BenQ ZOWIE XL2546K 240Hz 24.5"', price: 14900, stock: 1, category: 'Monitor', image_url: 'https://images.unsplash.com/photo-1586210579191-33b45e38fa2c?w=600', description: 'จอเกมมิ่งแข่งขันอีสปอร์ต เทคโนโลยี DyAc+ ลดภาพเบลอจากการสั่น' },
   { id: 12, name: 'LG UltraGear OLED 27" 240Hz QHD', price: 26900, stock: 0, category: 'Monitor', image_url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600', description: 'จอเกมมิ่ง OLED ความละเอียด 2K QHD รีเฟรชเรท 240Hz ความเร็ว 0.03ms' },
+  { id: 13, name: 'Razer Huntsman Mini 60% Optical', price: 3490, stock: 10, category: 'Keyboard', image_url: 'https://images.unsplash.com/photo-1595225476474-87563907a212?w=600', description: 'คีย์บอร์ดเกมมิ่ง 60% Optical Switch สวิตช์แสงตอบสนองระดับเสี้ยววินาที สำหรับเกมเมอร์ FPS' },
+  { id: 14, name: 'HyperX Cloud III Gaming Headset', price: 2990, stock: 8, category: 'Headset', image_url: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=600', description: 'หูฟังเกมมิ่งระดับตำนาน ปรับปรุงเสียงคมชัด ไมโครโฟนตัดเสียงรบกวน 10mm เมมโมรี่โฟมนุ่มสบาย' },
+  { id: 15, name: 'AOC 24G2SP 165Hz IPS Gaming Monitor', price: 5990, stock: 6, category: 'Monitor', image_url: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600', description: 'จอเกมมิ่ง IPS 165Hz 1ms MPRT คุ้มค่าที่สุดสำหรับ Valorant และเกม FPS esports' },
+  { id: 16, name: 'SteelSeries QcK Heavy Mousepad', price: 690, stock: 25, category: 'Mouse Pad', image_url: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=600', description: 'แผ่นรองเมาส์ผ้าระดับโปร หนาพิเศษ 6mm ช่วยควบคุมเมาส์ได้อย่างแม่นยำ เหมาะกับเกมยิง Tactical' },
 ];
 
 async function initDB() {

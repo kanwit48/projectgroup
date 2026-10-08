@@ -62,7 +62,12 @@ VALUES
 -- Monitor
 (10, 'ASUS ROG Swift 360Hz PG259QN', 19900.00, 4, '4 in stock', 'Monitor', 1, 'Bangkok Store', 'In Stock', 4.9, 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600', 'จอเกมมิ่งระดับโปร 24.5 นิ้ว Fast IPS 360Hz 1ms รองรับ NVIDIA G-SYNC และ Reflex Latency Analyzer'),
 (11, 'BenQ ZOWIE XL2546K 240Hz 24.5"', 14900.00, 1, '1 in stock', 'Monitor', 1, 'Bangkok Store', 'Low in stock', 4.9, 'https://images.unsplash.com/photo-1586210579191-33b45e38fa2c?w=600', 'จอเกมมิ่งแข่งขันอีสปอร์ตระดับโลก เทคโนโลยี DyAc+ ลดภาพเบลอจากการสั่นไหว พร้อมฐานขนาดกะทัดรัด'),
-(12, 'LG UltraGear OLED 27" 240Hz QHD', 26900.00, 0, '0 in stock', 'Monitor', 1, 'Warehouse A', 'Out of Stock', 5.0, 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600', 'จอเกมมิ่ง OLED ความละเอียด 2K QHD รีเฟรชเรท 240Hz ความเร็ว 0.03ms สีดำลึกและคมชัดสูงสุด')
+(12, 'LG UltraGear OLED 27" 240Hz QHD', 26900.00, 0, '0 in stock', 'Monitor', 1, 'Warehouse A', 'Out of Stock', 5.0, 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600', 'จอเกมมิ่ง OLED ความละเอียด 2K QHD รีเฟรชเรท 240Hz ความเร็ว 0.03ms สีดำลึกและคมชัดสูงสุด'),
+-- Additional AI Setup Gear
+(13, 'Razer Huntsman Mini 60% Optical', 3490.00, 10, '10 in stock', 'Keyboard', 2, 'Bangkok Store', 'In Stock', 4.8, 'https://images.unsplash.com/photo-1595225476474-87563907a212?w=600', 'คีย์บอร์ดเกมมิ่ง 60% Optical Switch สวิตช์แสงตอบสนองระดับเสี้ยววินาที สำหรับเกมเมอร์ FPS'),
+(14, 'HyperX Cloud III Gaming Headset', 2990.00, 8, '8 in stock', 'Headset', 1, 'Bangkok Store', 'In Stock', 4.8, 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=600', 'หูฟังเกมมิ่งระดับตำนาน ปรับปรุงเสียงคมชัด ไมโครโฟนตัดเสียงรบกวน 10mm เมมโมรี่โฟมนุ่มสบาย'),
+(15, 'AOC 24G2SP 165Hz IPS Gaming Monitor', 5990.00, 6, '6 in stock', 'Monitor', 1, 'Bangkok Store', 'In Stock', 4.8, 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600', 'จอเกมมิ่ง IPS 165Hz 1ms MPRT คุ้มค่าที่สุดสำหรับ Valorant และเกม FPS esports'),
+(16, 'SteelSeries QcK Heavy Gaming Mousepad', 690.00, 25, '25 in stock', 'Mouse Pad', 3, 'Bangkok Store', 'In Stock', 4.9, 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=600', 'แผ่นรองเมาส์ผ้าระดับโปร หนาพิเศษ 6mm ช่วยควบคุมเมาส์ได้อย่างแม่นยำ เหมาะกับเกมยิง Tactical')
 ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `price`=VALUES(`price`), `stock`=VALUES(`stock`), `category`=VALUES(`category`);
 
 -- 3. Table: orders (Orders & Checkout)
