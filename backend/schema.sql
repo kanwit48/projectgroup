@@ -5,8 +5,18 @@
 -- User: std6730251417
 -- ============================================================================
 
+-- Disable foreign key checks to safely recreate schema
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS `order_items`;
+DROP TABLE IF EXISTS `orders`;
+DROP TABLE IF EXISTS `wishlists`;
+DROP TABLE IF EXISTS `gaming_sets`;
+DROP TABLE IF EXISTS `products`;
+DROP TABLE IF EXISTS `users`;
+SET FOREIGN_KEY_CHECKS = 1;
+
 -- 1. Table: users (Authentication - Login, Sign Up, and Guest Login)
-CREATE TABLE IF NOT EXISTS `users` (
+CREATE TABLE `users` (
   `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `username` VARCHAR(100) NOT NULL UNIQUE,
   `password` VARCHAR(255) NOT NULL,
@@ -21,11 +31,10 @@ INSERT INTO `users` (`username`, `password`, `name`, `role`, `is_guest`)
 VALUES
 ('kanwit', '123456', 'Kanwit Voottikulsin', 'admin', FALSE),
 ('user1', '123456', 'Demo User', 'user', FALSE),
-('guest', 'guest', 'Guest Visitor', 'guest', TRUE)
-ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `role`=VALUES(`role`);
+('guest', 'guest', 'Guest Visitor', 'guest', TRUE);
 
 -- 2. Table: products (Inventory & Catalog - Keyboard, Mouse, Headset, Monitor)
-CREATE TABLE IF NOT EXISTS `products` (
+CREATE TABLE `products` (
   `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(255) NOT NULL,
   `price` DECIMAL(10, 2) NOT NULL,
@@ -91,7 +100,7 @@ VALUES
 ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `price`=VALUES(`price`), `stock`=VALUES(`stock`), `category`=VALUES(`category`);
 
 -- 3. Table: orders (Orders & Checkout)
-CREATE TABLE IF NOT EXISTS `orders` (
+CREATE TABLE `orders` (
   `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `order_number` VARCHAR(50) NOT NULL UNIQUE,
   `user_id` VARCHAR(50) DEFAULT 'guest',
@@ -108,7 +117,7 @@ CREATE TABLE IF NOT EXISTS `orders` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 4. Table: order_items (Items inside each order)
-CREATE TABLE IF NOT EXISTS `order_items` (
+CREATE TABLE `order_items` (
   `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `order_id` INT NOT NULL,
   `product_id` INT,
@@ -122,17 +131,15 @@ CREATE TABLE IF NOT EXISTS `order_items` (
 -- Sample Order Data
 INSERT INTO `orders` (`id`, `order_number`, `user_id`, `recipient_name`, `phone`, `address`, `province`, `postal_code`, `payment_method`, `total_amount`, `status`)
 VALUES
-(1, 'ORD-20261008-001', 'kanwit', 'Kanwit Voottikulsin', '0812345678', '199 หมู่ 6 ต.ทุ่งสุขลา', 'ชลบุรี', '20230', 'QR PromptPay', 6480.00, 'Waiting for Payment')
-ON DUPLICATE KEY UPDATE `order_number`=VALUES(`order_number`);
+(1, 'ORD-20261008-001', 'kanwit', 'Kanwit Voottikulsin', '0812345678', '199 หมู่ 6 ต.ทุ่งสุขลา', 'ชลบุรี', '20230', 'QR PromptPay', 6480.00, 'Waiting for Payment');
 
 INSERT INTO `order_items` (`order_id`, `product_id`, `product_name`, `price`, `quantity`, `image_url`)
 VALUES
 (1, 1, 'Logitech G Pro X Superlight 2', 3990.00, 1, 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=600'),
-(1, 2, 'Razer DeathAdder V3 Pro', 2490.00, 1, 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=600')
-ON DUPLICATE KEY UPDATE `price`=VALUES(`price`);
+(1, 2, 'Razer DeathAdder V3 Pro', 2490.00, 1, 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=600');
 
 -- 5. Table: wishlists (Saved Favorites)
-CREATE TABLE IF NOT EXISTS `wishlists` (
+CREATE TABLE `wishlists` (
   `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `user_id` VARCHAR(50) NOT NULL,
   `product_id` INT NOT NULL,
@@ -141,7 +148,7 @@ CREATE TABLE IF NOT EXISTS `wishlists` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 6. Table: gaming_sets (Pre-built Gaming Bundles)
-CREATE TABLE IF NOT EXISTS `gaming_sets` (
+CREATE TABLE `gaming_sets` (
   `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(255) NOT NULL,
   `description` TEXT,
